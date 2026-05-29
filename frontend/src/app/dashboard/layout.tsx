@@ -1,0 +1,49 @@
+'use client';
+
+import {
+  LayoutDashboard, Calendar, Wallet, MapPin, Star, Tag, Bell, HelpCircle, Settings, Gift, MessageCircle,
+} from 'lucide-react';
+import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
+import Link from 'next/link';
+import { Bell as BellIcon, MapPin as LocIcon } from 'lucide-react';
+import { BRAND } from '@/lib/constants';
+import { MobileNav } from '@/components/dashboard/MobileNav';
+
+const navItems = [
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard/bookings', label: 'My Bookings', icon: Calendar },
+  { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/dashboard/addresses', label: 'My Addresses', icon: MapPin },
+  { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
+  { href: '/dashboard/offers', label: 'Offers & Coupons', icon: Tag },
+  { href: '/dashboard/chat', label: 'Chat', icon: MessageCircle },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, badge: 3 },
+  { href: '/dashboard/support', label: 'Help & Support', icon: HelpCircle },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard/refer', label: 'Invite & Earn', icon: Gift },
+];
+
+export default function CustomerDashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex min-h-screen bg-slate-50">
+      <DashboardSidebar items={navItems} />
+      <div className="flex flex-1 flex-col">
+        <header className="flex items-center justify-between border-b bg-white px-6 py-4">
+          <button className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm">
+            <LocIcon className="h-4 w-4 text-brand-orange" />
+            {BRAND.defaultCity}
+          </button>
+          <div className="flex items-center gap-4">
+            <button className="relative"><BellIcon className="h-5 w-5" /><span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">3</span></button>
+            <Link href="/dashboard/profile" className="flex items-center gap-2">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white">A</div>
+              <span className="text-sm font-medium">Hi, Aman</span>
+            </Link>
+          </div>
+        </header>
+        <div className="flex-1 p-6 pb-24 lg:pb-6">{children}</div>
+      </div>
+      <MobileNav />
+    </div>
+  );
+}
