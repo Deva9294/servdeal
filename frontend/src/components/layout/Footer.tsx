@@ -26,7 +26,7 @@ export function Footer() {
     <footer className="bg-brand-navy text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-4 lg:px-6">
         <div>
-          <Logo className="[&_img]:brightness-0 [&_img]:invert" />
+          <Logo monochrome />
           <p className="mt-4 text-sm text-white/70">
             Book trusted professionals for all your home and daily services — fast, easy and reliable.
           </p>
@@ -66,7 +66,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 text-xs text-white/60 md:flex-row lg:px-6">
           <p>© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</p>
-          <p>Design &amp; Manage by Devacore</p>
+          <p>Design &amp; Managed by DevaCore Studio</p>
           <div className="flex gap-6">
             <span>100% Secure Payment</span>
             <span>Verified Professionals</span>
