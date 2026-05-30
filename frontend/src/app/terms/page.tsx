@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions - ServDeal",
-  description: "Read ServDeal's Terms & Conditions to understand the rules governing the use of our platform.",
+  description: "Read ServDeal&apos;s Terms & Conditions to understand the rules governing the use of our platform.",
 };
 
 export default function TermsPage() {
@@ -15,7 +15,7 @@ export default function TermsPage() {
         <div className="space-y-8 text-gray-700 leading-relaxed">
           <section>
             <h2 className="text-2xl font-bold text-secondary mb-4">1. Acceptance of Terms</h2>
-            <p>By accessing and using ServDeal's website and services, you accept and agree to be bound by the terms of this agreement.</p>
+            <p>By accessing and using ServDeal&apos;s website and services, you accept and agree to be bound by the terms of this agreement.</p>
           </section>
 
           <section>

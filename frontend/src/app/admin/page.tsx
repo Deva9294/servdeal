@@ -11,37 +11,34 @@ import {
 import { Users, Wrench, Calendar, DollarSign, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 
-const fallbackStats = {
-  totalUsers: 24568,
-  totalProviders: 3245,
-  totalBookings: 12847,
-  totalEarnings: 2875430,
-  pendingBookings: 256,
-  monthlyBookings: Array.from({ length: 31 }, (_, i) => ({ _id: i + 1, count: 200 + Math.random() * 150 })),
-  topProviders: [
-    { user: { name: 'Rohit Kumar' }, rating: 4.9, completedJobs: 245, totalEarnings: 87500 },
-    { user: { name: 'Suresh Patel' }, rating: 4.8, completedJobs: 198, totalEarnings: 72000 },
-  ],
-  userStats: { customers: 19820, providers: 3245, blocked: 1503 },
-  bookingStats: { completed: 9840, pending: 256, confirmed: 2108, cancelled: 643 },
-};
-
 const COLORS = ['#ff7a00', '#0b1f4d', '#94a3b8', '#22c55e'];
 
 export default function AdminDashboard() {
-  const { data, isLoading } = useQuery({
+  const { data: stats, isLoading, error } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: async () => {
-      try {
-        const res = await api.get('/admin/dashboard');
-        return res.data.data;
-      } catch {
-        return fallbackStats;
-      }
+      const res = await api.get('/admin/dashboard');
+      return res.data.data;
     },
   });
 
-  const stats = data || fallbackStats;
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-5">
+          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-28" />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="space-y-6">
+        <p className="text-sm text-red-500">Failed to load dashboard data. Please refresh.</p>
+      </div>
+    );
+  }
 
   const statCards = [
     { label: 'Total Users', value: stats.totalUsers?.toLocaleString('en-IN'), trend: '+18.5%', up: true, icon: Users, color: 'bg-blue-100 text-blue-600' },
@@ -63,14 +60,6 @@ export default function AdminDashboard() {
     { name: 'Pending', value: stats.bookingStats?.pending || 2 },
     { name: 'Cancelled', value: stats.bookingStats?.cancelled || 5 },
   ];
-
-  if (isLoading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-28" />)}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -109,18 +98,16 @@ export default function AdminDashboard() {
         <Card className="p-5">
           <h3 className="font-semibold">Recent Bookings</h3>
           <div className="mt-4 space-y-3">
-            {[
-              { id: 'BK4587', service: 'Electrical Wiring', user: 'Aman', status: 'confirmed', price: 850 },
-              { id: 'BK4586', service: 'AC Repair', user: 'Priya', status: 'pending', price: 1299 },
-            ].map((b) => (
-              <div key={b.id} className="flex items-center justify-between border-b pb-3">
+            {(stats.recentBookings || []).length === 0 && <p className="text-sm text-slate-500">No recent bookings.</p>}
+            {(stats.recentBookings || []).slice(0, 5).map((b: { bookingId: string; service: { name: string }; customer: { name: string }; status: string; amount: number }) => (
+              <div key={b.bookingId} className="flex items-center justify-between border-b pb-3">
                 <div>
-                  <p className="font-medium">#{b.id}</p>
-                  <p className="text-xs text-slate-500">{b.service} · {b.user}</p>
+                  <p className="font-medium">#{b.bookingId}</p>
+                  <p className="text-xs text-slate-500">{b.service?.name} · {b.customer?.name}</p>
                 </div>
                 <div className="text-right">
                   <Badge status={b.status}>{b.status}</Badge>
-                  <p className="text-sm font-bold">{formatCurrency(b.price)}</p>
+                  <p className="text-sm font-bold">{formatCurrency(b.amount)}</p>
                 </div>
               </div>
             ))}

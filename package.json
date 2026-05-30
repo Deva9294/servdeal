@@ -1,0 +1,18 @@
+{
+  "name": "servdeal",
+  "version": "1.0.0",
+  "description": "ServDeal - Service Marketplace Platform",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "start:backend": "npm start -w backend",
+    "start:frontend": "npm start -w frontend",
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend"
+  }
+}

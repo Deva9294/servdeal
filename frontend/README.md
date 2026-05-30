@@ -34,3 +34,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Live-location (Profile)
+
+This project includes a profile page where users can share their live location using the browser's geolocation API. To use:
+
+- Log in to the app and open `Dashboard → My Profile`.
+- Click `Share Current Location` and allow geolocation permissions.
+- The frontend will display a Leaflet map and send the coordinates to the backend `PATCH /api/v1/users/me`.

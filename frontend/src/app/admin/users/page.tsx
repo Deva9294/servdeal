@@ -1,26 +1,32 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
+import toast from 'react-hot-toast';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function AdminUsersPage() {
-  const { data } = useQuery({
+  const qc = useQueryClient();
+  const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      try {
-        const res = await api.get('/admin/users');
-        return res.data.data;
-      } catch {
-        return [
-          { name: 'Aman Kumar', email: 'customer@servdeal.com', phone: '8888888888', role: 'customer', isBlocked: false },
-          { name: 'Rohit Kumar', email: 'rohit@email.com', phone: '9876543210', role: 'provider', isBlocked: false },
-        ];
-      }
+      const res = await api.get('/admin/users');
+      return res.data.data;
     },
   });
+
+  const toggleBlock = async (id: string, current: boolean) => {
+    try {
+      await api.patch(`/admin/users/${id}`, { isBlocked: !current });
+      toast.success(current ? 'User unblocked' : 'User blocked');
+      qc.invalidateQueries({ queryKey: ['admin-users'] });
+    } catch {
+      toast.error('Action failed');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -32,16 +38,24 @@ export default function AdminUsersPage() {
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-slate-50 text-left"><th className="p-3">Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
           <tbody>
-            {(data || []).map((u: { name: string; email: string; phone: string; role: string; isBlocked: boolean }, i: number) => (
-              <tr key={i} className="border-b">
-                <td className="p-3 font-medium">{u.name}</td>
-                <td>{u.email}</td>
-                <td>{u.phone}</td>
-                <td className="capitalize">{u.role}</td>
-                <td><Badge status={u.isBlocked ? 'cancelled' : 'active'}>{u.isBlocked ? 'Blocked' : 'Active'}</Badge></td>
-                <td><button className="text-brand-orange text-sm">Edit</button></td>
-              </tr>
-            ))}
+            {isLoading ? (
+              <tr><td colSpan={6}><Skeleton className="h-10" /></td></tr>
+            ) : (
+              (users || []).map((u: { _id: string; name: string; email: string; phone: string; role: string; isBlocked: boolean }, i: number) => (
+                <tr key={u._id || i} className="border-b">
+                  <td className="p-3 font-medium">{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>{u.phone}</td>
+                  <td className="capitalize">{u.role}</td>
+                  <td><Badge status={u.isBlocked ? 'cancelled' : 'active'}>{u.isBlocked ? 'Blocked' : 'Active'}</Badge></td>
+                  <td>
+                    <button onClick={() => toggleBlock(u._id, u.isBlocked)} className="text-brand-orange text-sm">
+                      {u.isBlocked ? 'Unblock' : 'Block'}
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Card>

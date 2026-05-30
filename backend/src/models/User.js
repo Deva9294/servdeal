@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
     password: { type: String, select: false },
     role: {
       type: String,
-      enum: ['customer', 'provider', 'admin', 'superadmin'],
+      enum: ['customer', 'provider', 'worker', 'employer', 'admin', 'superadmin'],
       default: 'customer',
     },
     avatar: String,
@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema(
     state: { type: String, default: 'Bihar' },
     notificationsEnabled: { type: Boolean, default: true },
     fcmToken: String,
+    location: {
+      lat: { type: Number },
+      lng: { type: Number },
+    },
   },
   { timestamps: true }
 );

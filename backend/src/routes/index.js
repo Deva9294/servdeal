@@ -13,6 +13,10 @@ import reviewRoutes from './reviewRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import userRoutes from './userRoutes.js';
 import supportRoutes from './supportRoutes.js';
+import workerRoutes from './workerRoutes.js';
+import employerRoutes from './employerRoutes.js';
+import jobPostRoutes from './jobPostRoutes.js';
+import skillRoutes from './skillRoutes.js';
 
 const router = Router();
 
@@ -30,6 +34,10 @@ router.use('/reviews', reviewRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/users', userRoutes);
 router.use('/support', supportRoutes);
+router.use('/workers', workerRoutes);
+router.use('/employers', employerRoutes);
+router.use('/jobs', jobPostRoutes);
+router.use('/skills', skillRoutes);
 
 router.get('/health', (req, res) => {
   res.json({ success: true, message: 'ServDeal API is running' });

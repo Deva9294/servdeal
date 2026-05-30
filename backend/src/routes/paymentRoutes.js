@@ -5,6 +5,7 @@ import { protect } from '../middleware/auth.js';
 const router = Router();
 
 router.get('/config', ctrl.getConfig);
+router.post('/payu/callback', ctrl.payuCallback);
 
 router.use(protect);
 router.post('/order', ctrl.createOrder);

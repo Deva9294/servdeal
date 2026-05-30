@@ -1,11 +1,12 @@
 'use client';
 
 import {
-  LayoutDashboard, Users, Wrench, Calendar, DollarSign, Star, FileText, Bell, Settings, Ticket,
+  LayoutDashboard, Users, Wrench, Calendar, DollarSign, Star, FileText, Bell, Settings, Ticket, LogOut,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Input } from '@/components/ui/Input';
 import { Search, Bell as BellIcon } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,6 +22,10 @@ const navItems = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  const { user, logout } = useAuth();
+  const firstLetter = user?.name?.charAt(0).toUpperCase() || 'A';
+  const displayName = user?.name || 'Admin';
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <DashboardSidebar items={navItems} dark title="FIXING PROBLEMS, DELIVERING TRUST" />
@@ -34,12 +39,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-3">
             <button className="relative"><BellIcon className="h-5 w-5" /><span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">6</span></button>
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-white">A</div>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-white">{firstLetter}</div>
               <div className="hidden text-sm md:block">
-                <p className="font-semibold">Admin</p>
-                <p className="text-xs text-slate-500">Super Admin</p>
+                <p className="font-semibold">{displayName}</p>
+                <p className="text-xs text-slate-500">{user?.role || 'admin'}</p>
               </div>
             </div>
+            <button onClick={logout} className="rounded-lg p-2 hover:bg-slate-100" title="Logout">
+              <LogOut className="h-5 w-5 text-slate-600" />
+            </button>
           </div>
         </header>
         <div className="flex-1 overflow-auto p-6">{children}</div>

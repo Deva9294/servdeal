@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node -e \"require('fs').rmSync('.next',{ recursive: true, force: true })\" && next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -26,6 +26,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hot-toast": "^2.6.0",
+    "react-is": "^16.13.1",
     "react-leaflet": "^5.0.0",
     "react-redux": "^9.3.0",
     "recharts": "^3.8.1",

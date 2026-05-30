@@ -21,7 +21,7 @@ export const createBooking = catchAsync(async (req, res) => {
   const amount = req.body.amount || service.basePrice;
   const { commission, providerEarning } = calculateCommission(amount);
 
-  const paymentMethod = req.body.paymentMethod || 'razorpay';
+  const paymentMethod = req.body.paymentMethod || 'payu';
   let paymentStatus = 'pending';
   let status = 'pending';
 
@@ -73,7 +73,7 @@ export const createBooking = catchAsync(async (req, res) => {
   res.status(201).json({
     success: true,
     data: booking,
-    requiresPayment: ['razorpay', 'upi'].includes(paymentMethod),
+    requiresPayment: ['payu', 'upi'].includes(paymentMethod),
   });
 });
 

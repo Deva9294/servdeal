@@ -53,7 +53,7 @@ export const chatbotReply = (message) => {
   if (m.includes('cancel'))
     return 'You can cancel upcoming bookings from My Bookings. Refunds follow our Refund Policy.';
   if (m.includes('payment') || m.includes('pay'))
-    return 'We accept Razorpay, Stripe, UPI, Wallet, and Cash on Delivery.';
+    return 'We accept PayU, Stripe, UPI, Wallet, and Cash on Delivery.';
   if (m.includes('provider'))
     return 'Visit Become a Provider to register. Upload Aadhaar/PAN and select your services.';
   return 'Hi! I am ServDeal Assistant. Ask about booking, payments, providers, or track your order.';

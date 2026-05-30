@@ -41,13 +41,16 @@ export const register = catchAsync(async (req, res) => {
   if (await User.findOne({ $or: [{ email }, { phone: normalizedPhone }] })) {
     throw new AppError('Email or phone already registered', 400);
   }
+  const allowedRoles = ['customer', 'provider', 'worker', 'employer'];
+  const selectedRole = allowedRoles.includes(role) ? role : 'customer';
+
   const referralCode = `SD${Date.now().toString(36).toUpperCase().slice(-6)}`;
   const user = await User.create({
     name,
     email,
     phone: normalizedPhone,
     password,
-    role: role === 'provider' ? 'provider' : 'customer',
+    role: selectedRole,
     referralCode,
   });
   await Wallet.create({ user: user._id });

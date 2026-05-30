@@ -19,7 +19,7 @@ ServDeal is a full-stack service marketplace platform built with:
 ### 📋 Required Before Deployment
 - [ ] Set up production environment variables (.env)
 - [ ] Configure MongoDB Atlas cluster
-- [ ] Set up Razorpay account and API keys
+- [ ] Set up PayU account and API keys
 - [ ] Configure MSG91 or Twilio for SMS
 - [ ] Set up Cloudinary for images
 - [ ] Configure SMTP email credentials
@@ -32,9 +32,9 @@ ServDeal is a full-stack service marketplace platform built with:
 
 ## Key Credentials Needed
 
-### Payment (Razorpay)
-- Dashboard: dashboard.razorpay.com
-- Required: Key ID, Key Secret, Webhook Secret
+### Payment (PayU)
+- Dashboard: dashboard.payu.in or your regional PayU merchant portal
+- Required: Merchant Key, Merchant Salt
 
 ### SMS Provider
 - **Recommended**: MSG91 (msg91.com) for India
@@ -111,9 +111,8 @@ MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/servdeal
 JWT_SECRET=your-secret-key
 JWT_REFRESH_SECRET=your-refresh-key
 
-RAZORPAY_KEY_ID=rzp_live_xxxxx
-RAZORPAY_KEY_SECRET=xxxxx
-RAZORPAY_WEBHOOK_SECRET=xxxxx
+PAYU_MERCHANT_KEY=your_payu_merchant_key
+PAYU_MERCHANT_SALT=your_payu_merchant_salt
 
 SMS_PROVIDER=msg91
 MSG91_AUTH_KEY=xxxxx
@@ -160,7 +159,7 @@ NEXT_PUBLIC_SOCKET_URL=https://api.yourdomain.com
 
 - [ ] `.env` configured with real credentials
 - [ ] MongoDB Atlas cluster created and IP whitelisted
-- [ ] Razorpay test keys replaced with live keys
+- [ ] PayU test keys replaced with live keys
 - [ ] SMS provider credentials added
 - [ ] Cloudinary account linked
 - [ ] SMTP email configured

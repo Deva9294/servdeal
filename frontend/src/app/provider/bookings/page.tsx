@@ -8,25 +8,21 @@ import api from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 
 export default function ProviderBookingsPage() {
-  const { data } = useQuery({
+  const { data: bookings, isLoading } = useQuery({
     queryKey: ['provider-bookings'],
     queryFn: async () => {
-      try {
-        const res = await api.get('/bookings/provider');
-        return res.data.data;
-      } catch {
-        return [
-          { bookingId: 'BK4587', service: { name: 'Electrical Wiring' }, customer: { name: 'Aman Kumar', phone: '9876543210' }, status: 'confirmed', scheduledAt: new Date(), amount: 850 },
-        ];
-      }
+      const res = await api.get('/bookings/provider');
+      return res.data.data;
     },
   });
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-brand-navy">Bookings</h1>
+      {isLoading && <p className="text-sm text-slate-500">Loading...</p>}
+      {!isLoading && !bookings?.length && <p className="text-sm text-slate-500">No bookings yet.</p>}
       <div className="space-y-3">
-        {(data || []).map((b: { bookingId: string; service: { name: string }; customer: { name: string; phone: string }; status: string; scheduledAt: string; amount: number }, i: number) => (
+        {(bookings || []).map((b: { bookingId: string; service: { name: string }; customer: { name: string; phone: string }; status: string; scheduledAt: string; amount: number }, i: number) => (
           <Card key={i} className="flex flex-wrap items-center justify-between gap-4 p-4">
             <div>
               <p className="font-semibold">{b.service?.name}</p>

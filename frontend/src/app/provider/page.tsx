@@ -4,35 +4,41 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
-import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
 import { Calendar, CheckCircle, Clock, Wallet, ChevronRight } from 'lucide-react';
-
-const earningsData = Array.from({ length: 31 }, (_, i) => ({
-  day: i + 1,
-  amount: 400 + Math.random() * 600,
-}));
-
-const upcoming = [
-  { time: '10:00 AM', service: 'Electrical Wiring Repair', customer: 'Aman Kumar', location: 'Patna', status: 'confirmed' },
-  { time: '12:30 PM', service: 'Fan Installation', customer: 'Priya S.', location: 'Patna', status: 'pending' },
-  { time: '3:00 PM', service: 'Switch Board Repair', customer: 'Rahul V.', location: 'Danapur', status: 'confirmed' },
-];
-
-const myServices = [
-  'Electrical Wiring', 'Light Installation', 'Fan Repair', 'Switch Board Repair',
-];
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function ProviderDashboard() {
+  const { data: bookings, isLoading } = useQuery({
+    queryKey: ['provider-bookings'],
+    queryFn: async () => {
+      const res = await api.get('/bookings/provider');
+      return res.data.data;
+    },
+  });
+
+  const { data: wallet } = useQuery({
+    queryKey: ['wallet'],
+    queryFn: async () => {
+      const res = await api.get('/payments/wallet');
+      return res.data.data;
+    },
+  });
+
+  const totalBookings = bookings?.length || 0;
+  const completed = bookings?.filter((b: { status: string }) => b.status === 'completed').length || 0;
+  const pending = bookings?.filter((b: { status: string }) => b.status === 'pending' || b.status === 'confirmed').length || 0;
+  const earnings = wallet?.balance || 0;
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Total Bookings', value: '128', change: '+18%', icon: Calendar, color: 'text-blue-600 bg-blue-100' },
-          { label: 'Completed', value: '112', change: '+20%', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
-          { label: 'Pending Today', value: '8', change: 'View all', icon: Clock, color: 'text-orange-600 bg-orange-100' },
-          { label: 'Total Earnings', value: formatCurrency(18750), change: '+15%', icon: Wallet, color: 'text-purple-600 bg-purple-100' },
+          { label: 'Total Bookings', value: String(totalBookings), change: 'All time', icon: Calendar, color: 'text-blue-600 bg-blue-100' },
+          { label: 'Completed', value: String(completed), change: 'Done', icon: CheckCircle, color: 'text-green-600 bg-green-100' },
+          { label: 'Pending', value: String(pending), change: 'View all', icon: Clock, color: 'text-orange-600 bg-orange-100' },
+          { label: 'Wallet Balance', value: formatCurrency(earnings), change: 'Available', icon: Wallet, color: 'text-purple-600 bg-purple-100' },
         ].map((stat) => (
           <Card key={stat.label} className="p-5">
             <div className="flex items-start justify-between">
@@ -52,63 +58,45 @@ export default function ProviderDashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-5">
           <h3 className="font-semibold text-brand-navy">Earnings Overview</h3>
-          <div className="mt-4 h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={earningsData}>
-                <defs>
-                  <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ff7a00" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#ff7a00" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="day" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip />
-                <Area type="monotone" dataKey="amount" stroke="#ff7a00" fill="url(#orange)" />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="mt-4 h-64 flex items-center justify-center text-slate-400 text-sm">
+            Earnings chart coming soon
           </div>
           <div className="mt-4 flex justify-between border-t pt-4 text-sm">
-            <span>Total: {formatCurrency(18750)}</span>
-            <span>Charges: {formatCurrency(1875)}</span>
-            <span className="font-semibold text-green-600">Net: {formatCurrency(16875)}</span>
+            <span>Total: {formatCurrency(earnings)}</span>
+            <span className="font-semibold text-green-600">Net: {formatCurrency(earnings)}</span>
           </div>
         </Card>
 
         <Card className="p-5">
           <h3 className="font-semibold text-brand-navy">Upcoming Bookings</h3>
           <div className="mt-4 space-y-3">
-            {upcoming.map((b, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-xl border p-3">
-                <div className="text-center">
-                  <p className="text-xs font-bold text-brand-orange">{b.time}</p>
+            {isLoading ? (
+              <Skeleton className="h-16" />
+            ) : (
+              (bookings || []).filter((b: { status: string }) => b.status === 'confirmed' || b.status === 'pending').slice(0, 5).map((b: { _id: string; service: { name: string }; customer: { name: string }; address: { city: string }; status: string; scheduledAt: string }, i: number) => (
+                <div key={b._id || i} className="flex items-center gap-3 rounded-xl border p-3">
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-brand-orange">{new Date(b.scheduledAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{b.service?.name}</p>
+                    <p className="text-xs text-slate-500">{b.customer?.name} · {b.address?.city}</p>
+                  </div>
+                  <Badge status={b.status}>{b.status}</Badge>
+                  <ChevronRight className="h-4 w-4 text-slate-400" />
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">{b.service}</p>
-                  <p className="text-xs text-slate-500">{b.customer} · {b.location}</p>
-                </div>
-                <Badge status={b.status}>{b.status}</Badge>
-                <ChevronRight className="h-4 w-4 text-slate-400" />
-              </div>
-            ))}
+              ))
+            )}
+            {!isLoading && !(bookings || []).filter((b: { status: string }) => b.status === 'confirmed' || b.status === 'pending').length && (
+              <p className="text-sm text-slate-500">No upcoming bookings.</p>
+            )}
           </div>
         </Card>
       </div>
 
       <Card className="p-5">
         <h3 className="font-semibold text-brand-navy">My Services</h3>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {myServices.map((s) => (
-            <div key={s} className="flex items-center justify-between rounded-xl border p-3">
-              <span className="font-medium">{s}</span>
-              <label className="relative inline-flex cursor-pointer items-center">
-                <input type="checkbox" defaultChecked className="peer sr-only" />
-                <div className="h-6 w-11 rounded-full bg-green-500 peer-checked:bg-green-500" />
-              </label>
-            </div>
-          ))}
-        </div>
+        <p className="mt-4 text-sm text-slate-500">Manage your offered services from the provider profile.</p>
         <Button variant="outline" className="mt-4">+ Add New Service</Button>
       </Card>
 

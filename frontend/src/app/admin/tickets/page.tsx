@@ -6,25 +6,20 @@ import { Badge } from '@/components/ui/Badge';
 import api from '@/lib/api';
 
 export default function AdminTicketsPage() {
-  const { data } = useQuery({
+  const { data: tickets, isLoading } = useQuery({
     queryKey: ['tickets'],
     queryFn: async () => {
-      try {
-        const res = await api.get('/support');
-        return res.data.data;
-      } catch {
-        return [
-          { ticketId: 'TK1234', subject: 'Refund not received', status: 'open', user: { name: 'Aman' } },
-          { ticketId: 'TK1233', subject: 'Provider did not arrive', status: 'in_progress', user: { name: 'Priya' } },
-        ];
-      }
+      const res = await api.get('/support');
+      return res.data.data;
     },
   });
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-brand-navy">Support Tickets</h1>
-      {(data || []).map((t: { ticketId: string; subject: string; status: string; user: { name: string } }, i: number) => (
+      {isLoading && <p className="text-sm text-slate-500">Loading...</p>}
+      {!isLoading && !tickets?.length && <p className="text-sm text-slate-500">No tickets found.</p>}
+      {(tickets || []).map((t: { ticketId: string; subject: string; status: string; user: { name: string } }, i: number) => (
         <Card key={i} className="flex justify-between p-4">
           <div>
             <p className="font-semibold">#{t.ticketId} — {t.subject}</p>

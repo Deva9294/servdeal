@@ -19,6 +19,14 @@ function LoginForm() {
   const redirect = searchParams.get('redirect') || '/dashboard';
   const role = searchParams.get('role');
 
+  const resolveRoleDestination = (userRole: string) => {
+    if (userRole === 'admin' || userRole === 'superadmin') return '/admin';
+    if (userRole === 'provider') return '/provider';
+    if (userRole === 'worker') return '/worker';
+    if (userRole === 'employer') return '/employer';
+    return redirect;
+  };
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +39,7 @@ function LoginForm() {
       dispatch(setCredentials({ user: data.user, token: data.token }));
       document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
       toast.success(`Welcome back, ${data.user.name}!`);
-      const roleDest = data.user.role === 'admin' || data.user.role === 'superadmin' ? '/admin' : data.user.role === 'provider' ? '/provider' : redirect;
+      const roleDest = resolveRoleDestination(data.user.role);
       router.push(role === 'provider' ? '/provider' : roleDest);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -43,7 +51,7 @@ function LoginForm() {
 
   return (
     <AuthCard
-      title={role === 'provider' ? 'Provider Login' : 'Welcome Back'}
+      title={role === 'provider' ? 'Provider Login' : role === 'worker' ? 'Worker Login' : role === 'employer' ? 'Employer Login' : 'Welcome Back'}
       subtitle="Sign in to manage bookings and your account"
       footer={
         <>

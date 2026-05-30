@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/Button';
 import { getServiceBySlug, SERVICES } from '@/data/services';
 import { ServiceIcon } from '@/components/services/ServiceIcon';
 import { formatCurrency } from '@/lib/utils';
-import { payWithRazorpay } from '@/lib/razorpay';
+import { payWithPayU } from '@/lib/payu';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Calendar, MapPin, CreditCard, Wallet, Banknote } from 'lucide-react';
 
 const paymentMethods = [
-  { id: 'razorpay', label: 'Card / UPI (Razorpay)', icon: CreditCard },
+  { id: 'payu', label: 'Card / UPI (PayU)', icon: CreditCard },
   { id: 'wallet', label: 'Wallet', icon: Wallet },
   { id: 'cod', label: 'Cash on Delivery', icon: Banknote },
 ];
@@ -31,7 +31,7 @@ function BookForm() {
   const [time, setTime] = useState('10:00');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('Patna');
-  const [payment, setPayment] = useState('razorpay');
+  const [payment, setPayment] = useState('payu');
   const [loading, setLoading] = useState(false);
 
   const price =
@@ -54,24 +54,21 @@ function BookForm() {
         packageName: pkg,
         scheduledAt,
         amount: price,
-        paymentMethod: payment === 'razorpay' ? 'razorpay' : payment,
+        paymentMethod: payment === 'payu' ? 'payu' : payment,
         address: { line1: address, city, state: 'Bihar', pincode: '800001' },
       });
 
       const booking = data.data;
 
-      if (data.requiresPayment && payment === 'razorpay') {
-        toast.loading('Opening Razorpay...', { id: 'rzp' });
+      if (data.requiresPayment && payment === 'payu') {
+        toast.loading('Redirecting to PayU...', { id: 'payu' });
         try {
-          const result = await payWithRazorpay({
+          await payWithPayU({
             bookingId: booking._id,
             description: `${service.name} - ${pkg}`,
           });
-          toast.dismiss('rzp');
-          toast.success('Payment successful! Booking confirmed.');
-          router.push(`/dashboard/bookings/${result.data?._id || booking._id}`);
         } catch (payErr: unknown) {
-          toast.dismiss('rzp');
+          toast.dismiss('payu');
           const msg = payErr instanceof Error ? payErr.message : 'Payment failed';
           if (msg.includes('cancelled')) {
             toast.error('Payment cancelled. Booking saved — pay from My Bookings.');
@@ -142,13 +139,13 @@ function BookForm() {
             <span className="text-sm font-medium">{m.label}</span>
           </label>
         ))}
-        {payment === 'razorpay' && (
-          <p className="text-xs text-slate-500">Secured by Razorpay — UPI, cards, netbanking supported.</p>
+        {payment === 'payu' && (
+          <p className="text-xs text-slate-500">Secured by PayU — UPI, cards, netbanking supported.</p>
         )}
       </Card>
 
       <Button className="w-full" size="lg" onClick={handleBook} disabled={loading}>
-        {loading ? 'Processing...' : payment === 'razorpay' ? `Pay ${formatCurrency(price)} & Book` : `Confirm Booking · ${formatCurrency(price)}`}
+        {loading ? 'Processing...' : payment === 'payu' ? `Pay ${formatCurrency(price)} & Book` : `Confirm Booking · ${formatCurrency(price)}`}
       </Button>
     </div>
   );

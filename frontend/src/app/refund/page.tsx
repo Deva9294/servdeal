@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Refund Policy - ServDeal",
-  description: "Understand ServDeal's refund policy and money-back guarantee for customer satisfaction.",
+  description: "Understand ServDeal&apos;s refund policy and money-back guarantee for customer satisfaction.",
 };
 
 export default function RefundPolicyPage() {
@@ -14,12 +14,12 @@ export default function RefundPolicyPage() {
 
         <div className="space-y-8 text-gray-700 leading-relaxed">
           <section className="p-6 bg-primary/5 rounded-lg border border-primary/20">
-            <p className="text-lg font-semibold text-secondary">We stand behind our services. If you're not satisfied, we guarantee your money back.</p>
+            <p className="text-lg font-semibold text-secondary">We stand behind our services. If you&apos;re not satisfied, we guarantee your money back.</p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-secondary mb-4">1. Money-Back Guarantee</h2>
-            <p>If you're not satisfied with the quality of service provided, we offer a full refund without any questions asked.</p>
+            <p>If you&apos;re not satisfied with the quality of service provided, we offer a full refund without any questions asked.</p>
           </section>
 
           <section>

@@ -16,27 +16,16 @@ import { ChevronRight, Download, RotateCcw } from 'lucide-react';
 
 const tabs = ['all', 'upcoming', 'ongoing', 'completed', 'cancelled'] as const;
 
-const fallback = [
-  { _id: '1', bookingId: 'BK4587', service: { name: 'Electrical Wiring Repair' }, status: 'confirmed', scheduledAt: '2026-05-24T10:00:00', address: { city: 'Patna' }, amount: 850 },
-  { _id: '2', bookingId: 'BK4582', service: { name: 'AC Gas Refill' }, status: 'completed', scheduledAt: '2026-05-20T14:00:00', address: { city: 'Patna' }, amount: 1299 },
-];
-
 export default function BookingsPage() {
   const [tab, setTab] = useState<string>('all');
 
-  const { data, isLoading } = useQuery({
+  const { data: bookings, isLoading } = useQuery({
     queryKey: ['bookings', tab],
     queryFn: async () => {
-      try {
-        const res = await api.get(`/bookings/my${tab !== 'all' ? `?status=${tab}` : ''}`);
-        return res.data.data;
-      } catch {
-        return fallback;
-      }
+      const res = await api.get(`/bookings/my${tab !== 'all' ? `?status=${tab}` : ''}`);
+      return res.data.data;
     },
   });
-
-  const bookings = data || fallback;
 
   return (
     <div>
@@ -58,7 +47,8 @@ export default function BookingsPage() {
         <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}</div>
       ) : (
         <div className="space-y-3">
-          {bookings.map((b: { _id: string; bookingId: string; service: { name: string }; status: string; scheduledAt: string; address: { city: string }; amount: number }) => {
+          {bookings?.length === 0 && <p className="text-sm text-slate-500">No bookings found.</p>}
+          {(bookings || []).map((b: { _id: string; bookingId: string; service: { name: string }; status: string; scheduledAt: string; address: { city: string }; amount: number }) => {
             const slug = SERVICES.find((s) => b.service?.name?.includes(s.name.split(' ')[0]))?.slug || 'electrician';
             return (
               <Card key={b._id} className="flex flex-wrap items-center gap-4 p-4">

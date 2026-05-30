@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Privacy Policy - ServDeal",
-  description: "Read ServDeal's privacy policy to understand how we protect your personal information.",
+  description: "Read ServDeal&apos;s privacy policy to understand how we protect your personal information.",
 };
 
 export default function PrivacyPage() {

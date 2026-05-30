@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { formatCurrency } from '@/lib/utils';
-import { payWithRazorpay } from '@/lib/razorpay';
+import { payWithPayU } from '@/lib/payu';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
@@ -24,13 +24,13 @@ export default function WalletPage() {
     },
   });
 
-  const topUpRazorpay = async () => {
+  const topUpPayU = async () => {
     const amt = Number(amount);
     if (!amt || amt < 1) return toast.error('Enter valid amount');
     setLoading(true);
     try {
-      await payWithRazorpay({ amount: amt, purpose: 'wallet', description: 'Wallet top-up' });
-      toast.success('Wallet topped up successfully!');
+      await payWithPayU({ amount: amt, purpose: 'wallet', description: 'Wallet top-up' });
+      toast.success('Redirecting to PayU for payment...');
       qc.invalidateQueries({ queryKey: ['wallet'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Payment failed';
@@ -42,21 +42,21 @@ export default function WalletPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <PageHeader title="My Wallet" description="Add money via Razorpay (UPI / Card)" />
+      <PageHeader title="My Wallet" description="Add money via PayU (UPI / Card)" />
       <Card className="bg-gradient-to-br from-brand-navy to-blue-900 p-8 text-white">
         <p className="text-white/70">Available Balance</p>
         <p className="mt-2 text-4xl font-bold">{formatCurrency(data?.balance || 0)}</p>
       </Card>
       <Card className="p-5 space-y-4">
-        <h3 className="font-semibold">Add Money (Razorpay)</h3>
+        <h3 className="font-semibold">Add Money (PayU)</h3>
         <div className="flex gap-2">
           {['500', '1000', '2000'].map((a) => (
             <button key={a} onClick={() => setAmount(a)} className={`rounded-lg border px-4 py-2 text-sm ${amount === a ? 'border-brand-orange bg-orange-50' : ''}`}>₹{a}</button>
           ))}
         </div>
         <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} />
-        <Button className="w-full" onClick={topUpRazorpay} disabled={loading}>
-          {loading ? 'Opening Razorpay...' : `Pay ${formatCurrency(Number(amount) || 0)}`}
+        <Button className="w-full" onClick={topUpPayU} disabled={loading}>
+          {loading ? 'Opening PayU...' : `Pay ${formatCurrency(Number(amount) || 0)}`}
         </Button>
       </Card>
       <Card className="p-5">

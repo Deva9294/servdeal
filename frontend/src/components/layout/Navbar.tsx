@@ -16,6 +16,8 @@ const links = [
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/about', label: 'About Us' },
   { href: '/become-provider', label: 'Become a Provider' },
+  { href: '/worker', label: 'Find Work' },
+  { href: '/employer', label: 'Hire Workers' },
   { href: '/contact', label: 'Contact Us' },
 ];
 

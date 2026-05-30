@@ -1,7 +1,5 @@
 'use client';
 
-'use client';
-
 import Link from 'next/link';
 import { Share2, Camera, MessageCircle, Play } from 'lucide-react';
 import { Logo } from '@/components/brand/Logo';
@@ -21,12 +19,6 @@ const customerLinks = [
   { href: '/dashboard/profile', label: 'My Profile' },
   { href: '/help', label: 'Help & Support' },
   { href: '/faqs', label: 'FAQs' },
-];
-
-const providerLinks = [
-  { href: '/login?role=provider', label: 'Provider Login' },
-  { href: '/become-provider', label: 'Provider Register' },
-  { href: '/terms', label: 'Terms' },
 ];
 
 export function Footer() {
@@ -74,6 +66,7 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 text-xs text-white/60 md:flex-row lg:px-6">
           <p>© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</p>
+          <p>Design &amp; Manage by Devacore</p>
           <div className="flex gap-6">
             <span>100% Secure Payment</span>
             <span>Verified Professionals</span>

@@ -9,12 +9,10 @@ import { Button } from '@/components/ui/Button';
 import { SERVICES } from '@/data/services';
 import { ServiceIcon } from '@/components/services/ServiceIcon';
 import { formatCurrency } from '@/lib/utils';
-
-const bookings = [
-  { id: 'BK4587', service: 'Electrical Wiring Repair', slug: 'electrician', status: 'confirmed', date: 'May 24, 10:00 AM', location: 'Patna', price: 850 },
-  { id: 'BK4582', service: 'AC Gas Refill', slug: 'ac-repair', status: 'completed', date: 'May 20, 2:00 PM', location: 'Patna', price: 1299 },
-  { id: 'BK4570', service: 'Bathroom Cleaning', slug: 'cleaning', status: 'ongoing', date: 'May 24, 4:00 PM', location: 'Patna', price: 599 },
-];
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const quickActions = [
   { icon: RotateCcw, label: 'Book Again', desc: 'Repeat last booking', href: '/dashboard/bookings' },
@@ -24,11 +22,30 @@ const quickActions = [
 ];
 
 export default function CustomerDashboard() {
+  const { user } = useAuth();
+  const displayName = user?.name || 'there';
+
+  const { data: bookings, isLoading: bookingsLoading } = useQuery({
+    queryKey: ['bookings', 'dashboard-recent'],
+    queryFn: async () => {
+      const res = await api.get('/bookings/my?limit=3');
+      return res.data.data;
+    },
+  });
+
+  const { data: wallet } = useQuery({
+    queryKey: ['wallet'],
+    queryFn: async () => {
+      const res = await api.get('/payments/wallet');
+      return res.data.data;
+    },
+  });
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-6 lg:col-span-2">
         <Card className="overflow-hidden bg-gradient-to-r from-orange-50 to-white p-8">
-          <h1 className="text-2xl font-bold text-brand-navy">Hi Aman, How can we help you today?</h1>
+          <h1 className="text-2xl font-bold text-brand-navy">Hi {displayName}, How can we help you today?</h1>
           <div className="relative mt-4 max-w-xl">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
             <Input placeholder="Search for a service..." className="pl-10" />
@@ -71,18 +88,30 @@ export default function CustomerDashboard() {
             <Link href="/dashboard/bookings" className="text-sm text-brand-orange">View All</Link>
           </div>
           <div className="space-y-3">
-            {bookings.map((b) => (
-              <Card key={b.id} className="flex items-center gap-4 p-4">
-                <ServiceIcon name={SERVICES.find((s) => s.slug === b.slug)?.icon || 'Zap'} className="bg-amber-100" />
-                <div className="flex-1">
-                  <p className="font-semibold">{b.service}</p>
-                  <p className="text-xs text-slate-500">#{b.id} · {b.date} · {b.location}</p>
-                </div>
-                <Badge status={b.status}>{b.status}</Badge>
-                <p className="font-bold">{formatCurrency(b.price)}</p>
-                <ChevronRight className="h-5 w-5 text-slate-400" />
-              </Card>
-            ))}
+            {bookingsLoading ? (
+              <Skeleton className="h-24" />
+            ) : (
+              (bookings || []).map((b: { _id: string; bookingId: string; service: { name: string }; status: string; scheduledAt: string; address: { city: string }; amount: number }) => {
+                const slug = SERVICES.find((s) => b.service?.name?.includes(s.name.split(' ')[0]))?.slug || 'electrician';
+                return (
+                  <Link key={b._id} href={`/dashboard/bookings/${b._id}`}>
+                    <Card className="flex items-center gap-4 p-4">
+                      <ServiceIcon name={SERVICES.find((s) => s.slug === slug)?.icon || 'Zap'} className="bg-amber-100" />
+                      <div className="flex-1">
+                        <p className="font-semibold">{b.service?.name}</p>
+                        <p className="text-xs text-slate-500">#{b.bookingId} · {new Date(b.scheduledAt).toLocaleString('en-IN')} · {b.address?.city}</p>
+                      </div>
+                      <Badge status={b.status}>{b.status}</Badge>
+                      <p className="font-bold">{formatCurrency(b.amount)}</p>
+                      <ChevronRight className="h-5 w-5 text-slate-400" />
+                    </Card>
+                  </Link>
+                );
+              })
+            )}
+            {!bookingsLoading && !bookings?.length && (
+              <p className="text-sm text-slate-500">No bookings yet. <Link href="/services" className="text-brand-orange">Book a service</Link></p>
+            )}
           </div>
         </div>
       </div>
@@ -90,8 +119,8 @@ export default function CustomerDashboard() {
       <div className="space-y-4">
         <Card className="p-5">
           <p className="text-sm text-slate-500">My Wallet</p>
-          <p className="text-2xl font-bold text-brand-navy">{formatCurrency(1250)}</p>
-          <Button className="mt-4 w-full" size="sm">Add Money</Button>
+          <p className="text-2xl font-bold text-brand-navy">{formatCurrency(wallet?.balance || 0)}</p>
+          <Link href="/dashboard/wallet"><Button className="mt-4 w-full" size="sm">Add Money</Button></Link>
         </Card>
         <Card className="bg-brand-navy p-5 text-white">
           <p className="font-semibold">Need Help?</p>

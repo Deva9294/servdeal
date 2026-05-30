@@ -8,6 +8,8 @@ export type AuthUser = {
   role: string;
   avatar?: string;
   city?: string;
+  referralCode?: string;
+  location?: { lat: number; lng: number };
 };
 
 type AuthState = {

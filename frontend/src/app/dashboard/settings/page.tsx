@@ -4,20 +4,12 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useTheme } from 'next-themes';
-import { useDispatch } from 'react-redux';
-import { logout } from '@/store/authSlice';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { Moon, Sun, Bell, Globe, Shield } from 'lucide-react';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const dispatch = useDispatch();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    dispatch(logout());
-    router.push('/login');
-  };
+  const { logout } = useAuth();
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
@@ -40,7 +32,7 @@ export default function SettingsPage() {
         </div>
         <LinkRow icon={Shield} label="Privacy & Security" href="/privacy" />
       </Card>
-      <Button variant="outline" className="w-full text-red-600 border-red-200" onClick={handleLogout}>Logout</Button>
+      <Button variant="outline" className="w-full text-red-600 border-red-200" onClick={logout}>Logout</Button>
     </div>
   );
 }

@@ -5,10 +5,12 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Gift, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function ReferPage() {
-  const code = 'SDAMAN2026';
-  const link = `https://servdeal.com/signup?ref=${code}`;
+  const { user } = useAuth();
+  const code = user?.referralCode || 'SERVDEAL';
+  const link = `${typeof window !== 'undefined' ? window.location.origin : 'https://servdeal.com'}/signup?ref=${code}`;
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -40,8 +42,8 @@ export default function ReferPage() {
         </div>
       </Card>
       <Card className="p-5">
-        <p className="font-semibold">Total earned: ₹300</p>
-        <p className="text-sm text-slate-500">3 successful referrals</p>
+        <p className="font-semibold">Total earned: ₹0</p>
+        <p className="text-sm text-slate-500">Share your code to start earning</p>
       </Card>
     </div>
   );

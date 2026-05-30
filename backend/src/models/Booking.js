@@ -29,8 +29,8 @@ const bookingSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ['razorpay', 'stripe', 'upi', 'wallet', 'cod'],
-      default: 'razorpay',
+      enum: ['stripe', 'payu', 'upi', 'wallet', 'cod'],
+      default: 'payu',
     },
     paymentStatus: {
       type: String,

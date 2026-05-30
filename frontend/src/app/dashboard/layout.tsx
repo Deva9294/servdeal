@@ -1,13 +1,14 @@
 'use client';
 
 import {
-  LayoutDashboard, Calendar, Wallet, MapPin, Star, Tag, Bell, HelpCircle, Settings, Gift, MessageCircle,
+  LayoutDashboard, Calendar, Wallet, MapPin, Star, Tag, Bell, HelpCircle, Settings, Gift, MessageCircle, LogOut,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import Link from 'next/link';
 import { Bell as BellIcon, MapPin as LocIcon } from 'lucide-react';
 import { BRAND } from '@/lib/constants';
 import { MobileNav } from '@/components/dashboard/MobileNav';
+import { useAuth } from '@/hooks/useAuth';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,6 +25,10 @@ const navItems = [
 ];
 
 export default function CustomerDashboardLayout({ children }: { children: React.ReactNode }) {
+  const { user, logout } = useAuth();
+  const firstLetter = user?.name?.charAt(0).toUpperCase() || 'U';
+  const displayName = user?.name || 'User';
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <DashboardSidebar items={navItems} />
@@ -36,9 +41,12 @@ export default function CustomerDashboardLayout({ children }: { children: React.
           <div className="flex items-center gap-4">
             <button className="relative"><BellIcon className="h-5 w-5" /><span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">3</span></button>
             <Link href="/dashboard/profile" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white">A</div>
-              <span className="text-sm font-medium">Hi, Aman</span>
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white">{firstLetter}</div>
+              <span className="text-sm font-medium">Hi, {displayName}</span>
             </Link>
+            <button onClick={logout} className="rounded-lg p-2 hover:bg-slate-100" title="Logout">
+              <LogOut className="h-5 w-5 text-slate-600" />
+            </button>
           </div>
         </header>
         <div className="flex-1 p-6 pb-24 lg:pb-6">{children}</div>

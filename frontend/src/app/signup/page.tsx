@@ -16,7 +16,17 @@ function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
-  const isProvider = searchParams.get('role') === 'provider';
+  const selectedRole = searchParams.get('role');
+  const role = ['provider', 'worker', 'employer'].includes(selectedRole || '')
+    ? selectedRole
+    : 'customer';
+
+  const resolveRoleDestination = (userRole: string) => {
+    if (userRole === 'provider') return '/provider';
+    if (userRole === 'worker') return '/worker';
+    if (userRole === 'employer') return '/employer';
+    return '/dashboard';
+  };
 
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -27,11 +37,11 @@ function SignupForm() {
     try {
       const { data } = await api.post('/auth/register', {
         ...form,
-        role: isProvider ? 'provider' : 'customer',
+        role,
       });
       dispatch(setCredentials({ user: data.user, token: data.token }));
       toast.success('Account created successfully!');
-      router.push(isProvider ? '/provider' : '/dashboard');
+      router.push(resolveRoleDestination(data.user.role));
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || 'Registration failed');
@@ -42,12 +52,28 @@ function SignupForm() {
 
   return (
     <AuthCard
-      title={isProvider ? 'Register as Provider' : 'Create Account'}
-      subtitle={isProvider ? 'Start earning with ServDeal after verification' : 'Book trusted home services in minutes'}
+      title={
+        role === 'provider'
+          ? 'Register as Provider'
+          : role === 'worker'
+            ? 'Register as Worker'
+            : role === 'employer'
+              ? 'Register as Employer'
+              : 'Create Account'
+      }
+      subtitle={
+        role === 'provider'
+          ? 'Start earning with ServDeal after verification'
+          : role === 'worker'
+            ? 'Find local work opportunities near you'
+            : role === 'employer'
+              ? 'Hire verified nearby workers quickly'
+              : 'Book trusted home services in minutes'
+      }
       footer={
         <p className="text-slate-600">
           Already have an account?{' '}
-          <Link href={`/login${isProvider ? '?role=provider' : ''}`} className="font-semibold text-brand-orange hover:underline">
+          <Link href={`/login${role !== 'customer' ? `?role=${role}` : ''}`} className="font-semibold text-brand-orange hover:underline">
             Sign in
           </Link>
         </p>

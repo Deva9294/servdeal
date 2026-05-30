@@ -17,7 +17,8 @@ export default function SuperAdminSettings() {
         </Card>
         <Card className="p-6 space-y-4">
           <h3 className="font-semibold">Payment Settings</h3>
-          <Input placeholder="Razorpay Key ID" />
+          <Input placeholder="PayU Key" />
+          <Input placeholder="PayU Salt" type="password" />
           <Input placeholder="Stripe Secret" type="password" />
           <Input placeholder="Platform Commission %" defaultValue="15" />
           <Button>Save Settings</Button>
