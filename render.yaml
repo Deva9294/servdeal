@@ -15,9 +15,9 @@ services:
       - key: SMS_PROVIDER
         value: msg91
       - key: MSG91_AUTH_KEY
-        value: YOUR_MSG91_AUTH_KEY
+        value: 519622AOt4gfygx6a133af2P1
       - key: MSG91_OTP_TEMPLATE_ID
-        value: YOUR_MSG91_TEMPLATE_ID
+        value: SRVDL
 
   - type: web
     name: servdeal-frontend
