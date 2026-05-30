@@ -33,7 +33,7 @@ export function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 lg:px-6">
         {/* Logo + City */}
         <div className="flex items-center gap-2 shrink-0">
-          <Logo />
+          <Logo className="[&_img]:h-11" />
           <button className="hidden items-center gap-1 rounded-md border border-slate-200 px-2 py-0.5 text-[11px] font-medium text-brand-navy md:flex">
             <MapPin className="h-3 w-3 text-brand-orange" />
             {BRAND.defaultCity}
