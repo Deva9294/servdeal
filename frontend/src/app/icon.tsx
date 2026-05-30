@@ -19,19 +19,27 @@ export default function Icon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#1e3a5f',
-          borderRadius: '8px',
+          background: '#ffffff',
+          borderRadius: '6px',
+          border: '2px solid #e2e8f0',
         }}
       >
-        <svg width="20" height="20" viewBox="0 0 100 100" fill="none">
+        <svg width="22" height="22" viewBox="0 0 100 100" fill="none">
           <path
-            d="M65 15C65 15 55 5 45 15C35 25 35 35 45 45C55 55 65 55 75 65C85 75 85 85 75 95"
-            stroke="#ff7a00"
-            strokeWidth="12"
+            d="M30 20C30 20 20 30 20 50C20 70 35 80 50 80"
+            stroke="#1e3a5f"
+            strokeWidth="14"
             strokeLinecap="round"
             fill="none"
           />
-          <circle cx="75" cy="85" r="8" fill="white" />
+          <path
+            d="M50 80C65 80 80 70 80 50"
+            stroke="#ff7a00"
+            strokeWidth="14"
+            strokeLinecap="round"
+            fill="none"
+          />
+          <circle cx="80" cy="50" r="10" fill="#1e3a5f" />
         </svg>
       </div>
     ),
