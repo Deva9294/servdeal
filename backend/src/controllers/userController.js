@@ -21,10 +21,34 @@ export const updateMe = catchAsync(async (req, res) => {
   res.json({ success: true, data: user });
 });
 
+export const getMyAddresses = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user._id).select('addresses');
+  res.json({ success: true, data: user.addresses });
+});
+
 export const addAddress = catchAsync(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (req.body.isDefault) user.addresses.forEach((a) => (a.isDefault = false));
   user.addresses.push(req.body);
+  await user.save();
+  res.json({ success: true, data: user.addresses });
+});
+
+export const deleteAddress = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const idx = user.addresses.findIndex((a) => a._id.toString() === req.params.id);
+  if (idx === -1) throw new AppError('Address not found', 404);
+  user.addresses.splice(idx, 1);
+  await user.save();
+  res.json({ success: true, data: user.addresses });
+});
+
+export const setDefaultAddress = catchAsync(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  const address = user.addresses.id(req.params.id);
+  if (!address) throw new AppError('Address not found', 404);
+  user.addresses.forEach((a) => (a.isDefault = false));
+  address.isDefault = true;
   await user.save();
   res.json({ success: true, data: user.addresses });
 });

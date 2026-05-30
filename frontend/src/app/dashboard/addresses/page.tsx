@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { MapPin, Plus } from 'lucide-react';
+import { MapPin, Plus, Trash2, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -16,8 +16,8 @@ export default function AddressesPage() {
   const { data: addresses, isLoading } = useQuery({
     queryKey: ['my-addresses'],
     queryFn: async () => {
-      const res = await api.get('/auth/me');
-      return (res.data.user?.addresses || []) as Array<{ _id: string; label: string; line1: string; city: string; pincode: string; isDefault: boolean }>;
+      const res = await api.get('/users/addresses');
+      return (res.data.data || []) as Array<{ _id: string; label: string; line1: string; city: string; pincode: string; isDefault: boolean }>;
     },
   });
 
@@ -30,9 +30,30 @@ export default function AddressesPage() {
       await api.post('/users/addresses', form);
       toast.success('Address added');
       setShowForm(false);
+      setForm({ label: 'Home', line1: '', city: 'Patna', pincode: '' });
       qc.invalidateQueries({ queryKey: ['my-addresses'] });
     } catch {
       toast.error('Could not add address');
+    }
+  };
+
+  const removeAddress = async (id: string) => {
+    try {
+      await api.delete(`/users/addresses/${id}`);
+      toast.success('Address removed');
+      qc.invalidateQueries({ queryKey: ['my-addresses'] });
+    } catch {
+      toast.error('Could not remove address');
+    }
+  };
+
+  const setDefault = async (id: string) => {
+    try {
+      await api.patch(`/users/addresses/${id}/default`);
+      toast.success('Default address updated');
+      qc.invalidateQueries({ queryKey: ['my-addresses'] });
+    } catch {
+      toast.error('Could not update default');
     }
   };
 
@@ -65,6 +86,16 @@ export default function AddressesPage() {
                 {a.isDefault && <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700">Default</span>}
               </div>
               <p className="text-sm text-slate-600">{a.line1}, {a.city} - {a.pincode}</p>
+            </div>
+            <div className="flex gap-2">
+              {!a.isDefault && (
+                <button onClick={() => setDefault(a._id)} title="Set as default">
+                  <Star className="h-4 w-4 text-slate-400 hover:text-brand-orange" />
+                </button>
+              )}
+              <button onClick={() => removeAddress(a._id)} title="Remove">
+                <Trash2 className="h-4 w-4 text-slate-400 hover:text-red-500" />
+              </button>
             </div>
           </Card>
         ))
