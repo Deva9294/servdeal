@@ -140,18 +140,17 @@ NEXT_PUBLIC_SOCKET_URL=https://api.yourdomain.com
 
 ## Deployment Platforms
 
-**Backend → Railway** (Node.js/Express + MongoDB + Socket.io + PayU webhooks)
-**Frontend → Vercel** (Next.js optimized, auto serverless)
+**Backend + Frontend → Render** (FREE tier, zero jhanjat)
 
-Why this combo?
-- Vercel is built for Next.js — fastest builds, edge caching, serverless
-- Railway handles long-running Node.js server, file uploads, Socket.io, PayU callbacks
-- Both auto-deploy on git push
+Why Render?
+- Completely FREE tier available
+- Auto-deploy from GitHub push
+- Zero config hassle — bas `render.yaml` daalo
+- Backend (Node.js) + Frontend (Next.js) dono support karta hai
+- SSL + custom domain built-in
 
-Config files:
-- `backend/railway.toml` — Railway deploy config
-- `frontend/vercel.json` — Vercel build config
-- `frontend/next.config.ts` — standalone output for Vercel
+Config file:
+- `render.yaml` — defines both backend & frontend services
 
 ---
 

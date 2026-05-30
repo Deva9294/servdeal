@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: servdeal-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: OTP_EXPOSE_IN_RESPONSE
+        value: false
+
+  - type: web
+    name: servdeal-frontend
+    env: node
+    rootDir: frontend
+    buildCommand: npm install ; npm run build
+    startCommand: npx next start
+    envVars:
+      - key: NODE_ENV
+        value: production
