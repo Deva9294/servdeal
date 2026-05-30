@@ -30,7 +30,7 @@ export default function ContactPage() {
       <PageHero
         title="Contact"
         highlight="Us"
-        description="Questions about bookings, partnerships, or media? Our Patna support team responds within 24 hours on business days."
+        description="Questions about bookings, partnerships, or media? Our Rehti support team responds within 24 hours on business days."
       />
 
       <section className="pb-20">
@@ -38,7 +38,7 @@ export default function ContactPage() {
           <div className="grid gap-10 lg:grid-cols-3">
             <div className="space-y-4">
               {[
-                { icon: Phone, label: 'Phone', value: 919294899787 },
+                { icon: Phone, label: 'Phone', value: BRAND.phone },
                 { icon: Mail, label: 'Email', value: BRAND.email },
                 { icon: MapPin, label: 'Office', value: `Village Itarsi, Rehti, Sehore, M.P. India 466446, ${BRAND.defaultCity}` },
                 {

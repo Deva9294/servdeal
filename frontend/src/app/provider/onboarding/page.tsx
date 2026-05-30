@@ -22,11 +22,43 @@ export default function ProviderOnboardingPage() {
     accountNumber: '',
     ifsc: '',
     services: [] as string[],
+    location: { lat: 0, lng: 0 } as { lat: number; lng: number },
   });
+  const [locLoading, setLocLoading] = useState(false);
+
+  const captureLocation = () => {
+    setLocLoading(true);
+    if (!navigator.geolocation) {
+      toast.error('Geolocation not supported');
+      setLocLoading(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm({ ...form, location: { lat: pos.coords.latitude, lng: pos.coords.longitude } });
+        toast.success('Live location captured');
+        setLocLoading(false);
+      },
+      () => {
+        toast.error('Could not get location');
+        setLocLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const finish = async () => {
+    const payload = {
+      ...form,
+      bankDetails: {
+        accountName: form.accountName,
+        accountNumber: form.accountNumber,
+        ifsc: form.ifsc,
+      },
+      location: form.location.lat !== 0 ? form.location : undefined,
+    };
     try {
-      await api.post('/providers/register', form);
+      await api.post('/providers/register', payload);
       toast.success('Registration submitted for approval!');
       router.push('/provider');
     } catch {
@@ -49,6 +81,16 @@ export default function ProviderOnboardingPage() {
             <Input placeholder="Business / Display Name" value={form.businessName} onChange={(e) => setForm({ ...form, businessName: e.target.value })} />
             <Input type="number" placeholder="Years of experience" value={form.experienceYears} onChange={(e) => setForm({ ...form, experienceYears: Number(e.target.value) })} />
             <textarea className="w-full rounded-xl border p-3 text-sm" placeholder="Short bio" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+            <div className="rounded-xl border p-4">
+              <p className="text-sm font-medium text-slate-700">Live Location</p>
+              <p className="text-xs text-slate-500">Required for service area mapping</p>
+              {form.location.lat !== 0 && (
+                <p className="text-xs text-green-600 mt-1">✓ Captured: {form.location.lat.toFixed(5)}, {form.location.lng.toFixed(5)}</p>
+              )}
+              <Button variant="outline" size="sm" className="mt-2" onClick={captureLocation} disabled={locLoading}>
+                {locLoading ? 'Capturing...' : 'Capture My Live Location'}
+              </Button>
+            </div>
           </>
         )}
         {step === 1 && (

@@ -41,6 +41,20 @@ function LoginForm() {
       const sameSite = isProd ? 'None' : 'Lax';
       const secure = isProd ? 'Secure' : '';
       document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=${sameSite}; ${secure}`.replace(/; $/, '');
+
+      // Capture live location
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            api.patch('/users/me', {
+              location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+            }).catch(() => {});
+          },
+          () => {},
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      }
+
       toast.success(`Welcome back, ${data.user.name}!`);
       const roleDest = resolveRoleDestination(data.user.role);
       router.push(role === 'provider' ? '/provider' : roleDest);

@@ -6,10 +6,11 @@ export const BRAND = {
     navy: '#0b1f4d',
     white: '#ffffff',
   },
-  phone: '+91 98765 43210',
-  email: 'support@servdeal.com',
-  whatsapp: '919876543210',
-  defaultCity: 'Patna, Bihar',
+  phone: '+91 92948 99787',
+  email: 'support@servdeal.in',
+  emailAlt: 'info@servdeal.in',
+  whatsapp: '919294899787',
+  defaultCity: 'Rehti, Sehore, M.P.',
 };
 
 const getApiUrl = () => {

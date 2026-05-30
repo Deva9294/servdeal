@@ -18,6 +18,9 @@ export const registerProvider = catchAsync(async (req, res) => {
     bankDetails: req.body.bankDetails,
     city: req.body.city || req.user.city,
     documents: req.body.documents || [],
+    currentLocation: req.body.location
+      ? { type: 'Point', coordinates: [req.body.location.lng, req.body.location.lat] }
+      : undefined,
   });
 
   res.status(201).json({ success: true, data: provider });

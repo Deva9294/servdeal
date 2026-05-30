@@ -4,12 +4,24 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
-import { Calendar, CheckCircle, Clock, Wallet, ChevronRight } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Calendar, CheckCircle, Clock, Wallet, ChevronRight, MapPin, Car } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Skeleton } from '@/components/ui/Skeleton';
+import toast from 'react-hot-toast';
+import { useState } from 'react';
 
 export default function ProviderDashboard() {
+  const qc = useQueryClient();
+  const [locLoading, setLocLoading] = useState(false);
+  const { data: profile } = useQuery({
+    queryKey: ['provider-profile'],
+    queryFn: async () => {
+      const res = await api.get('/auth/me');
+      return res.data.user;
+    },
+  });
+
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['provider-bookings'],
     queryFn: async () => {
@@ -25,6 +37,32 @@ export default function ProviderDashboard() {
       return res.data.data;
     },
   });
+
+  const updateLocation = () => {
+    setLocLoading(true);
+    if (!navigator.geolocation) {
+      toast.error('Geolocation not supported');
+      setLocLoading(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        api.patch('/users/me', {
+          location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+        }).then(() => {
+          toast.success('Live location updated');
+          qc.invalidateQueries({ queryKey: ['provider-profile'] });
+        }).catch(() => {
+          toast.error('Failed to update location');
+        }).finally(() => setLocLoading(false));
+      },
+      () => {
+        toast.error('Could not get location');
+        setLocLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const totalBookings = bookings?.length || 0;
   const completed = bookings?.filter((b: { status: string }) => b.status === 'completed').length || 0;
@@ -54,6 +92,26 @@ export default function ProviderDashboard() {
           </Card>
         ))}
       </div>
+
+      <Card className="flex items-center gap-4 bg-brand-navy p-5 text-white">
+        <div className="rounded-full bg-brand-orange p-3">
+          <Car className="h-6 w-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <p className="font-semibold">My Live Location</p>
+          {profile?.location?.lat ? (
+            <p className="text-sm text-white/70">
+              Lat: {profile.location.lat.toFixed(5)}, Lng: {profile.location.lng.toFixed(5)}
+            </p>
+          ) : (
+            <p className="text-sm text-white/70">Location not set — update to show on customer map</p>
+          )}
+        </div>
+        <Button variant="outline" size="sm" className="border-white/30 text-white hover:bg-white/20" onClick={updateLocation} disabled={locLoading}>
+          <MapPin className="h-4 w-4 mr-1" />
+          {locLoading ? 'Updating...' : 'Update'}
+        </Button>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-5">
