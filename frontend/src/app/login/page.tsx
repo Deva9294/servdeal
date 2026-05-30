@@ -59,8 +59,14 @@ function LoginForm() {
       const roleDest = resolveRoleDestination(data.user.role);
       router.push(role === 'provider' ? '/provider' : roleDest);
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || 'Invalid email or password');
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const msg = axiosErr?.response?.data?.message;
+      const status = axiosErr?.response?.status;
+      if (status === 404) {
+        toast.error('Backend API not reachable. Please try again later or contact support.');
+      } else {
+        toast.error(msg || 'Invalid email or password');
+      }
     } finally {
       setLoading(false);
     }

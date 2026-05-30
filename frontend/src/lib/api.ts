@@ -19,7 +19,13 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  config.baseURL = getApiUrl();
+  const baseURL = getApiUrl();
+  // Explicitly build absolute URL — do not rely on axios baseURL merging
+  if (config.url && !config.url.startsWith('http')) {
+    const cleanBase = baseURL.replace(/\/$/, '');
+    const cleanUrl = config.url.replace(/^\//, '');
+    config.url = `${cleanBase}/${cleanUrl}`;
+  }
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
