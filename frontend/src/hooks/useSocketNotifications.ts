@@ -34,8 +34,15 @@ export function useSocketNotifications() {
 
     socket.emit('join:user', user.id);
 
-    socket.on('notification', ({ title, message }: { title: string; message: string }) => {
-      toast.success(`${title}: ${message}`, { duration: 5000 });
+    socket.on('notification', ({ title, message, type }: { title: string; message: string; type?: string }) => {
+      if (type === 'badge') toast.success(`🏅 ${title}: ${message}`, { duration: 6000 });
+      else if (type === 'job_alert') toast.success(`🔔 ${title}: ${message}`, { duration: 5000 });
+      else if (type === 'team') toast.success(`👥 ${title}: ${message}`, { duration: 5000 });
+      else if (type === 'training') toast.success(`📚 ${title}: ${message}`, { duration: 5000 });
+      else if (type === 'tool') toast.success(`🔧 ${title}: ${message}`, { duration: 5000 });
+      else if (type === 'referral') toast.success(`💰 ${title}: ${message}`, { duration: 5000 });
+      else if (type === 'matching') toast.success(`🤖 ${title}: ${message}`, { duration: 5000 });
+      else toast.success(`${title}: ${message}`, { duration: 5000 });
     });
 
     socket.on('booking:update', (booking: { bookingId: string; status: string }) => {

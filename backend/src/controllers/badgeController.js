@@ -1,6 +1,7 @@
 import Badge from '../models/Badge.js';
 import Worker from '../models/Worker.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -47,6 +48,19 @@ export const awardBadge = catchAsync(async (req, res) => {
   worker.badges = worker.badges || [];
   worker.badges.push({ badge: badgeId, awardedAt: new Date(), verifiedBy: req.user._id });
   await worker.save();
+
+  const io = req.app.get('io');
+  await Notification.create({
+    user: worker.user,
+    title: 'New Badge Earned',
+    message: `You earned the ${badge.name} badge!`,
+    type: 'badge',
+    link: '/provider/badges',
+  });
+  io?.to(`user:${worker.user}`).emit('notification', {
+    title: 'New Badge Earned',
+    message: `You earned the ${badge.name} badge!`,
+  });
 
   res.json({ success: true, message: `${badge.name} awarded` });
 });

@@ -1,6 +1,7 @@
 import JobAlert from '../models/JobAlert.js';
 import Worker from '../models/Worker.js';
 import Booking from '../models/Booking.js';
+import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -37,6 +38,21 @@ export const respondToAlert = catchAsync(async (req, res) => {
   if (action === 'accept') {
     // Link worker to booking
     await Booking.findByIdAndUpdate(alert.booking, { provider: req.user._id, status: 'confirmed' });
+    const booking = await Booking.findById(alert.booking);
+    if (booking) {
+      const io = req.app.get('io');
+      await Notification.create({
+        user: booking.customer,
+        title: 'Job Accepted',
+        message: 'A worker has accepted your job request',
+        type: 'job_alert',
+        link: `/dashboard/bookings/${booking._id}`,
+      });
+      io?.to(`user:${booking.customer}`).emit('notification', {
+        title: 'Job Accepted',
+        message: 'A worker has accepted your job request',
+      });
+    }
   }
 
   res.json({ success: true, alert });
@@ -77,6 +93,7 @@ export const generateNearbyAlerts = catchAsync(async (req, res) => {
   }).limit(10);
 
   const alerts = [];
+  const io = req.app.get('io');
   for (const worker of workers) {
     const distanceKm = Math.round(worker.workingRadiusKm || 5);
     const alert = await JobAlert.create({
@@ -87,6 +104,21 @@ export const generateNearbyAlerts = catchAsync(async (req, res) => {
       expiresAt: new Date(Date.now() + 30 * 60 * 1000),
     });
     alerts.push(alert);
+
+    const wUser = await Worker.findById(worker._id).select('user');
+    if (wUser) {
+      await Notification.create({
+        user: wUser.user,
+        title: 'New Job Alert Nearby',
+        message: `A ${booking.service?.name || 'job'} is available ${distanceKm}km away`,
+        type: 'job_alert',
+        link: '/provider/alerts',
+      });
+      io?.to(`user:${wUser.user}`).emit('notification', {
+        title: 'New Job Alert',
+        message: `A job is available ${distanceKm}km from you`,
+      });
+    }
   }
 
   res.json({ success: true, count: alerts.length, alerts });

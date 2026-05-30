@@ -1,6 +1,7 @@
 import ReferralReward from '../models/ReferralReward.js';
 import User from '../models/User.js';
 import Wallet from '../models/Wallet.js';
+import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -46,6 +47,19 @@ export const claimReferral = catchAsync(async (req, res) => {
   reward.creditedAt = new Date();
   await reward.save();
 
+  const io = req.app.get('io');
+  await Notification.create({
+    user: referrer._id,
+    title: 'Referral Reward',
+    message: 'You earned ₹50 for a new signup!',
+    type: 'referral',
+    link: '/dashboard/refer',
+  });
+  io?.to(`user:${referrer._id}`).emit('notification', {
+    title: 'Referral Reward',
+    message: 'You earned ₹50 for a new signup!',
+  });
+
   res.json({ success: true, reward });
 });
 
@@ -75,6 +89,19 @@ export const processBookingReferral = catchAsync(async (req, res) => {
   reward.status = 'credited';
   reward.creditedAt = new Date();
   await reward.save();
+
+  const io = req.app.get('io');
+  await Notification.create({
+    user: user.referredBy,
+    title: 'Referral Booking Reward',
+    message: 'You earned ₹100 for a referral booking!',
+    type: 'referral',
+    link: '/dashboard/refer',
+  });
+  io?.to(`user:${user.referredBy}`).emit('notification', {
+    title: 'Referral Booking Reward',
+    message: 'You earned ₹100 for a referral booking!',
+  });
 
   res.json({ success: true, reward });
 });

@@ -9,6 +9,7 @@ import { BRAND } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from './ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
+import { VoiceSearch } from '@/components/search/VoiceSearch';
 
 const links = [
   { href: '/', label: 'Home' },
@@ -89,6 +90,11 @@ export function Navbar() {
             </AnimatePresence>
           </div>
         </nav>
+
+        {/* Search */}
+        <div className="hidden lg:block flex-1 max-w-xs mx-4">
+          <VoiceSearch />
+        </div>
 
         {/* Right: Login/Signup */}
         <div className="hidden items-center gap-2 lg:flex shrink-0">

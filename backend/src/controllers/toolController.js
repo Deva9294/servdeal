@@ -1,5 +1,6 @@
 import Tool from '../models/Tool.js';
 import ToolRental from '../models/ToolRental.js';
+import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -79,6 +80,19 @@ export const rentTool = catchAsync(async (req, res) => {
     deliveryAddress,
   });
 
+  const io = req.app.get('io');
+  await Notification.create({
+    user: tool.owner,
+    title: 'New Tool Rental Request',
+    message: `Someone requested to rent your ${tool.name}`,
+    type: 'tool',
+    link: '/provider/bookings',
+  });
+  io?.to(`user:${tool.owner}`).emit('notification', {
+    title: 'New Tool Rental Request',
+    message: `Someone requested to rent your ${tool.name}`,
+  });
+
   res.status(201).json({ success: true, rental });
 });
 
@@ -102,6 +116,19 @@ export const updateRentalStatus = catchAsync(async (req, res) => {
   rental.status = req.body.status;
   if (req.body.status === 'returned') rental.returnedAt = new Date();
   await rental.save();
+
+  const io = req.app.get('io');
+  await Notification.create({
+    user: rental.renter,
+    title: 'Rental Update',
+    message: `Your tool rental is now ${req.body.status}`,
+    type: 'tool',
+    link: '/dashboard/bookings',
+  });
+  io?.to(`user:${rental.renter}`).emit('notification', {
+    title: 'Rental Update',
+    message: `Your tool rental is now ${req.body.status}`,
+  });
 
   res.json({ success: true, rental });
 });

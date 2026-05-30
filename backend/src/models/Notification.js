@@ -5,7 +5,7 @@ const notificationSchema = new mongoose.Schema(
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     title: String,
     message: String,
-    type: { type: String, enum: ['booking', 'payment', 'system', 'chat', 'promo'] },
+    type: { type: String, enum: ['booking', 'payment', 'system', 'chat', 'promo', 'badge', 'job_alert', 'team', 'training', 'tool', 'referral', 'matching'] },
     link: String,
     isRead: { type: Boolean, default: false },
     metadata: mongoose.Schema.Types.Mixed,

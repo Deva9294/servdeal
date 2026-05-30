@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboard, User, Wrench, Calendar, Wallet, Star, Clock, Bell, Settings, LogOut,
-  Award, Briefcase, Zap, Users, AlertTriangle,
+  Award, Briefcase, Zap, Users, AlertTriangle, Sparkles,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Button } from '@/components/ui/Button';
@@ -22,6 +22,7 @@ const navItems = [
   { href: '/provider/badges', label: 'Badges', icon: Award },
   { href: '/provider/portfolio', label: 'Portfolio', icon: Briefcase },
   { href: '/provider/alerts', label: 'Job Alerts', icon: AlertTriangle },
+  { href: '/provider/matching', label: 'AI Matching', icon: Sparkles },
   { href: '/provider/emergency', label: 'Emergency Mode', icon: Zap },
   { href: '/provider/team', label: 'My Team', icon: Users },
   { href: '/provider/notifications', label: 'Notifications', icon: Bell, badge: 5 },

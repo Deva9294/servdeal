@@ -1,5 +1,6 @@
 import Team from '../models/Team.js';
 import Worker from '../models/Worker.js';
+import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -61,6 +62,22 @@ export const addMember = catchAsync(async (req, res) => {
 
   team.members.push({ worker: workerId, role });
   await team.save();
+
+  const addedWorker = await Worker.findById(workerId).select('user');
+  if (addedWorker) {
+    const io = req.app.get('io');
+    await Notification.create({
+      user: addedWorker.user,
+      title: 'Team Invitation',
+      message: `You were added to team "${team.name}"`,
+      type: 'team',
+      link: '/provider/team',
+    });
+    io?.to(`user:${addedWorker.user}`).emit('notification', {
+      title: 'Team Invitation',
+      message: `You were added to team "${team.name}"`,
+    });
+  }
 
   res.json({ success: true, team });
 });

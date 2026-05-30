@@ -1,6 +1,7 @@
 import TrainingCourse from '../models/TrainingCourse.js';
 import TrainingEnrollment from '../models/TrainingEnrollment.js';
 import Worker from '../models/Worker.js';
+import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
@@ -37,6 +38,19 @@ export const enrollCourse = catchAsync(async (req, res) => {
   });
 
   await TrainingCourse.findByIdAndUpdate(course._id, { $inc: { enrolledCount: 1 } });
+
+  const io = req.app.get('io');
+  await Notification.create({
+    user: req.user._id,
+    title: 'Enrolled in Course',
+    message: `You enrolled in ${course.title}`,
+    type: 'training',
+    link: `/training/${course.slug}`,
+  });
+  io?.to(`user:${req.user._id}`).emit('notification', {
+    title: 'Enrolled in Course',
+    message: `You enrolled in ${course.title}`,
+  });
 
   res.status(201).json({ success: true, enrollment });
 });
@@ -78,6 +92,19 @@ export const updateProgress = catchAsync(async (req, res) => {
     enrollment.completedAt = new Date();
     enrollment.certificateId = `CERT-${Date.now()}`;
     await TrainingCourse.findByIdAndUpdate(enrollment.course, { $inc: { completedCount: 1 } });
+
+    const io = req.app.get('io');
+    await Notification.create({
+      user: req.user._id,
+      title: 'Course Completed',
+      message: `You completed the course and earned a certificate!`,
+      type: 'training',
+      link: `/training/${course?.slug || ''}`,
+    });
+    io?.to(`user:${req.user._id}`).emit('notification', {
+      title: 'Course Completed',
+      message: `You completed the course and earned a certificate!`,
+    });
   } else if (enrollment.status === 'enrolled' && enrollment.overallProgress > 0) {
     enrollment.status = 'in_progress';
   }
