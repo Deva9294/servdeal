@@ -30,20 +30,19 @@ export default function CourseDetailPage() {
   const [enrolled, setEnrolled] = useState(false);
 
   useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const { data } = await api.get(`/training/${slug}`);
+        setCourse(data.course);
+        setEnrolled(data.isEnrolled || false);
+      } catch {
+        toast.error('Failed to load course');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchCourse();
   }, [slug]);
-
-  const fetchCourse = async () => {
-    try {
-      const { data } = await api.get(`/training/${slug}`);
-      setCourse(data.course);
-      setEnrolled(data.isEnrolled || false);
-    } catch {
-      toast.error('Failed to load course');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const enroll = async () => {
     try {

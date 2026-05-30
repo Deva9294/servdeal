@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { Wrench, MapPin, Star, User, Phone } from 'lucide-react';
+import { Wrench, MapPin, Star, User } from 'lucide-react';
 import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 interface ToolDetail {
@@ -36,19 +36,18 @@ export default function ToolDetailPage() {
   const [dates, setDates] = useState({ startDate: '', endDate: '' });
 
   useEffect(() => {
+    const fetchTool = async () => {
+      try {
+        const { data } = await api.get(`/tools/${slug}`);
+        setTool(data.tool);
+      } catch {
+        toast.error('Failed to load tool');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchTool();
   }, [slug]);
-
-  const fetchTool = async () => {
-    try {
-      const { data } = await api.get(`/tools/${slug}`);
-      setTool(data.tool);
-    } catch {
-      toast.error('Failed to load tool');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const rent = async () => {
     try {
