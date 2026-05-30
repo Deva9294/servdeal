@@ -9,40 +9,66 @@ import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { cn } from '@/lib/utils';
 import api from '@/lib/api';
 import { setCredentials } from '@/store/authSlice';
+
+const roles = [
+  { key: 'customer', label: 'Customer', desc: 'Book home services' },
+  { key: 'provider', label: 'Provider', desc: 'Offer your services' },
+  { key: 'worker', label: 'Worker', desc: 'Find local jobs' },
+  { key: 'employer', label: 'Employer', desc: 'Hire workers' },
+];
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
   const redirect = searchParams.get('redirect') || '/dashboard';
-  const role = searchParams.get('role');
-
-  const resolveRoleDestination = (userRole: string) => {
-    if (userRole === 'admin' || userRole === 'superadmin') return '/admin';
-    if (userRole === 'provider') return '/provider';
-    if (userRole === 'worker') return '/worker';
-    if (userRole === 'employer') return '/employer';
-    return redirect;
-  };
+  const urlRole = searchParams.get('role');
+  const [activeRole, setActiveRole] = useState(urlRole && roles.find(r => r.key === urlRole) ? urlRole : 'customer');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const resolveRoleDestination = (userRole: string) => {
+    if (userRole === 'admin' || userRole === 'superadmin') return '/admin';
+    if (userRole === 'provider') return '/provider/dashboard';
+    if (userRole === 'worker') return '/worker';
+    if (userRole === 'employer') return '/employer';
+    return redirect;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const { data } = await api.post('/auth/login', { email, password });
+      const userRole = data.user.role;
+
+      // Validate role: customer portal me sirf customer/admin login
+      // provider portal me sirf provider login
+      const roleMappings: Record<string, string[]> = {
+        customer: ['customer', 'admin', 'superadmin'],
+        provider: ['provider'],
+        worker: ['worker'],
+        employer: ['employer'],
+      };
+
+      const allowed = roleMappings[activeRole] || ['customer'];
+      if (!allowed.includes(userRole)) {
+        toast.error(`This account is a ${userRole}. Please use the ${userRole} login portal.`);
+        setLoading(false);
+        return;
+      }
+
       dispatch(setCredentials({ user: data.user, token: data.token }));
       const isProd = window.location.protocol === 'https:';
       const sameSite = isProd ? 'None' : 'Lax';
       const secure = isProd ? 'Secure' : '';
       document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=${sameSite}; ${secure}`.replace(/; $/, '');
 
-      // Capture live location
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -56,12 +82,7 @@ function LoginForm() {
       }
 
       toast.success(`Welcome back, ${data.user.name}!`);
-      const roleDest = resolveRoleDestination(data.user.role);
-      if (data.user.role === 'provider') {
-        router.push('/provider/dashboard');
-      } else {
-        router.push(role === 'provider' ? '/provider' : roleDest);
-      }
+      router.push(resolveRoleDestination(userRole));
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
       const msg = axiosErr?.response?.data?.message;
@@ -76,22 +97,24 @@ function LoginForm() {
     }
   };
 
+  const currentRole = roles.find(r => r.key === activeRole)!;
+
   return (
     <AuthCard
-      title={role === 'provider' ? 'Provider Login' : role === 'worker' ? 'Worker Login' : role === 'employer' ? 'Employer Login' : 'Welcome Back'}
-      subtitle="Sign in to manage bookings and your account"
+      title={`${currentRole.label} Login`}
+      subtitle={currentRole.desc}
       footer={
         <>
-          <Link href="/forgot-password" className="text-brand-orange hover:underline">
+          <Link href="/forgot-password" className="text-brand-orange hover:underline text-sm">
             Forgot password?
           </Link>
-          <p className="mt-3 text-slate-600">
+          <p className="mt-3 text-slate-600 text-sm">
             New here?{' '}
-            <Link href={`/signup${role ? `?role=${role}` : ''}`} className="font-semibold text-brand-orange hover:underline">
-              Create account
+            <Link href={`/signup?role=${activeRole}`} className="font-semibold text-brand-orange hover:underline">
+              Create {currentRole.label} account
             </Link>
           </p>
-          <p className="mt-2">
+          <p className="mt-2 text-sm">
             <Link href="/otp" className="text-brand-orange hover:underline">
               Login with OTP instead
             </Link>
@@ -99,6 +122,25 @@ function LoginForm() {
         </>
       }
     >
+      {/* Role Tabs */}
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        {roles.map((r) => (
+          <button
+            key={r.key}
+            type="button"
+            onClick={() => setActiveRole(r.key)}
+            className={cn(
+              'rounded-lg px-2 py-2 text-xs font-medium transition',
+              activeRole === r.key
+                ? 'bg-brand-navy text-white'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            )}
+          >
+            {r.label}
+          </button>
+        ))}
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
@@ -109,7 +151,7 @@ function LoginForm() {
           <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
         <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign In'}
+          {loading ? 'Signing in...' : `Sign In as ${currentRole.label}`}
         </Button>
       </form>
     </AuthCard>

@@ -54,12 +54,17 @@ export default function OtpPage() {
       const secure = isProd ? 'Secure' : '';
       document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=${sameSite}; ${secure}`.replace(/; $/, '');
       toast.success('Logged in successfully!');
+      const userRole = data.user.role;
       const dest =
-        data.user.role === 'admin' || data.user.role === 'superadmin'
+        userRole === 'admin' || userRole === 'superadmin'
           ? '/admin'
-          : data.user.role === 'provider'
+          : userRole === 'provider'
             ? '/provider/dashboard'
-            : '/dashboard';
+            : userRole === 'worker'
+              ? '/worker'
+              : userRole === 'employer'
+                ? '/employer'
+                : '/dashboard';
       router.push(dest);
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
