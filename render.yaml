@@ -22,4 +22,6 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://servdeal-backend.onrender.com/api/v1
 
