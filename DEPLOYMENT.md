@@ -140,14 +140,18 @@ NEXT_PUBLIC_SOCKET_URL=https://api.yourdomain.com
 
 ## Deployment Platforms
 
-Both **Backend** and **Frontend** deploy on **Railway**:
-- Railway supports Node.js (backend) and Next.js (frontend) both
-- SSL + custom domain support built-in
-- Auto-deploy on git push
+**Backend → Railway** (Node.js/Express + MongoDB + Socket.io + PayU webhooks)
+**Frontend → Vercel** (Next.js optimized, auto serverless)
 
-Railway config files already created:
-- `backend/railway.toml`
-- `frontend/railway.toml`
+Why this combo?
+- Vercel is built for Next.js — fastest builds, edge caching, serverless
+- Railway handles long-running Node.js server, file uploads, Socket.io, PayU callbacks
+- Both auto-deploy on git push
+
+Config files:
+- `backend/railway.toml` — Railway deploy config
+- `frontend/vercel.json` — Vercel build config
+- `frontend/next.config.ts` — standalone output for Vercel
 
 ---
 
