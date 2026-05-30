@@ -12,4 +12,17 @@ export const BRAND = {
   defaultCity: 'Patna, Bihar',
 };
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+const getApiUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+  // Auto-detect Render backend from frontend URL
+  if (typeof window !== 'undefined') {
+    const host = window.location.host;
+    if (host.endsWith('.onrender.com')) {
+      const name = host.replace('.onrender.com', '');
+      return `https://${name}-backend.onrender.com/api/v1`;
+    }
+  }
+  return 'http://localhost:5000/api/v1';
+};
+
+export const API_URL = getApiUrl();

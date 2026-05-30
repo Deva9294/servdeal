@@ -11,10 +11,11 @@ const sendTokens = (user, res) => {
   const payload = { id: user._id, role: user.role };
   const token = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie('token', token, {
     httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
   return res.json({
@@ -160,6 +161,7 @@ export const getMe = catchAsync(async (req, res) => {
 });
 
 export const logout = catchAsync(async (req, res) => {
-  res.clearCookie('token');
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie('token', { secure: isProd, sameSite: isProd ? 'none' : 'lax' });
   res.json({ success: true, message: 'Logged out' });
 });

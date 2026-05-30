@@ -23,6 +23,10 @@ const corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow any Render subdomain in production
+    if (process.env.NODE_ENV === 'production' && origin.endsWith('.onrender.com')) {
+      return callback(null, true);
+    }
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
   credentials: true,
