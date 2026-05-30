@@ -9,9 +9,9 @@ export function Logo({ className, showTagline = false, monochrome = false }: { c
       <Image
         src={monochrome ? '/images/logo-mono.png' : '/images/logo.png'}
         alt={BRAND.name}
-        width={140}
-        height={48}
-        className={cn('h-10 w-auto object-contain', monochrome && 'brightness-0 invert')}
+        width={120}
+        height={40}
+        className={cn('h-9 w-auto object-contain', monochrome && 'brightness-0 invert')}
         priority
       />
       {showTagline && (

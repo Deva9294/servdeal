@@ -26,23 +26,23 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-slate-100">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 lg:px-6">
-        <div className="flex items-center gap-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2 lg:px-6">
+        <div className="flex items-center gap-3">
           <Logo />
-          <button className="hidden items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-brand-navy md:flex">
+          <button className="hidden items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-brand-navy md:flex">
             <MapPin className="h-4 w-4 text-brand-orange" />
             {BRAND.defaultCity}
             <ChevronDown className="h-3 w-3" />
           </button>
         </div>
 
-        <nav className="hidden items-center gap-6 lg:flex">
+        <nav className="hidden items-center gap-4 xl:gap-5 lg:flex">
           {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
               className={cn(
-                'text-sm font-medium transition hover:text-brand-orange',
+                'text-[13px] font-medium transition hover:text-brand-orange',
                 l.href === '/' ? 'text-brand-orange' : 'text-brand-navy/80'
               )}
             >
