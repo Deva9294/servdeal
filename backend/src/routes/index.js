@@ -20,6 +20,10 @@ import skillRoutes from './skillRoutes.js';
 
 const router = Router();
 
+router.get('/', (req, res) => {
+  res.json({ success: true, message: 'ServDeal API is running', timestamp: new Date().toISOString() });
+});
+
 router.use('/auth', authRoutes);
 router.use('/services', serviceRoutes);
 router.use('/bookings', bookingRoutes);
