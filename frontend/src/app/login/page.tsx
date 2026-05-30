@@ -37,7 +37,10 @@ function LoginForm() {
     try {
       const { data } = await api.post('/auth/login', { email, password });
       dispatch(setCredentials({ user: data.user, token: data.token }));
-      document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      const isProd = window.location.protocol === 'https:';
+      const sameSite = isProd ? 'None' : 'Lax';
+      const secure = isProd ? 'Secure' : '';
+      document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=${sameSite}; ${secure}`.replace(/; $/, '');
       toast.success(`Welcome back, ${data.user.name}!`);
       const roleDest = resolveRoleDestination(data.user.role);
       router.push(role === 'provider' ? '/provider' : roleDest);
