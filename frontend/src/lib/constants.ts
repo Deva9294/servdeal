@@ -18,6 +18,9 @@ const getApiUrl = () => {
   // Auto-detect Render backend from frontend URL
   if (typeof window !== 'undefined') {
     const host = window.location.host;
+    if (host === 'servdeal-frontend.onrender.com') {
+      return 'https://servdeal-backend.onrender.com/api/v1';
+    }
     if (host.endsWith('.onrender.com')) {
       const name = host.replace('.onrender.com', '');
       return `https://${name}-backend.onrender.com/api/v1`;

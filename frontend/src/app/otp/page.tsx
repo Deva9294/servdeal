@@ -30,8 +30,14 @@ export default function OtpPage() {
       setPhone(data.phone || phone);
       setStep('otp');
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      toast.error(msg || 'Failed to send OTP');
+      const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
+      const msg = axiosErr?.response?.data?.message;
+      const status = axiosErr?.response?.status;
+      if (status === 404) {
+        toast.error('Backend API not reachable. Please try again later or contact support.');
+      } else {
+        toast.error(msg || 'Failed to send OTP. Check your number and try again.');
+      }
     } finally {
       setLoading(false);
     }
