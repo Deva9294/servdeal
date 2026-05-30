@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -72,9 +72,9 @@ export default function TeamPage() {
         <EmptyState icon={Users} title="No Team Yet" description="You are not part of any team yet. Create one to take on bigger projects!" actionLabel="Create Team" onAction={() => setCreating(true)} />
         {creating && (
             <div className="mt-4 space-y-3 text-left">
-              <Input placeholder="Team name" value={form.name} onChange={(e: any) => setForm({ ...form, name: e.target.value })} />
-              <Input placeholder="Description" value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} />
-              <Input placeholder="Skills (comma separated)" value={form.skills} onChange={(e: any) => setForm({ ...form, skills: e.target.value })} />
+              <Input placeholder="Team name" value={form.name} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, name: e.target.value })} />
+              <Input placeholder="Description" value={form.description} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, description: e.target.value })} />
+              <Input placeholder="Skills (comma separated)" value={form.skills} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, skills: e.target.value })} />
               <div className="flex gap-2">
                 <Button onClick={createTeam}>Create</Button>
                 <Button variant="ghost" onClick={() => setCreating(false)}>Cancel</Button>

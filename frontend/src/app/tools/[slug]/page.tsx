@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { useParams } from 'next/navigation';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { Card } from '@/components/ui/Card';
@@ -108,8 +108,8 @@ export default function ToolDetailPage() {
             ) : (
               <Card className="mt-6 p-5 space-y-3">
                 <p className="font-bold text-brand-navy">Select Rental Dates</p>
-                <input type="date" className="w-full rounded-xl border px-4 py-2 text-sm" value={dates.startDate} onChange={(e: any) => setDates({ ...dates, startDate: e.target.value })} />
-                <input type="date" className="w-full rounded-xl border px-4 py-2 text-sm" value={dates.endDate} onChange={(e: any) => setDates({ ...dates, endDate: e.target.value })} />
+                <input type="date" className="w-full rounded-xl border px-4 py-2 text-sm" value={dates.startDate} onChange={(e: ChangeEvent<HTMLInputElement>) => setDates({ ...dates, startDate: e.target.value })} />
+                <input type="date" className="w-full rounded-xl border px-4 py-2 text-sm" value={dates.endDate} onChange={(e: ChangeEvent<HTMLInputElement>) => setDates({ ...dates, endDate: e.target.value })} />
                 <div className="flex gap-2">
                   <Button className="flex-1" onClick={rent}>Confirm Rental</Button>
                   <Button variant="ghost" onClick={() => setRenting(false)}>Cancel</Button>

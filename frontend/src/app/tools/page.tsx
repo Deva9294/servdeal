@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -64,7 +64,7 @@ export default function ToolsPage() {
           <Input
             placeholder="Search tools..."
             value={search}
-            onChange={(e: any) => setSearch(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             className="w-full"
           />
         </div>

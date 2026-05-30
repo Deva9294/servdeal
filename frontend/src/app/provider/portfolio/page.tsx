@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ChangeEvent } from 'react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -80,11 +80,11 @@ export default function PortfolioPage() {
       {showForm && (
         <Card className="mb-6 p-6 space-y-4">
           <h3 className="font-bold text-brand-navy">Add Work Entry</h3>
-          <Input placeholder="Title" value={form.title} onChange={(e: any) => setForm({ ...form, title: e.target.value })} />
-          <textarea placeholder="Description" className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none" rows={3} value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} />
+          <Input placeholder="Title" value={form.title} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, title: e.target.value })} />
+          <textarea placeholder="Description" className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none" rows={3} value={form.description} onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, description: e.target.value })} />
           <div className="grid grid-cols-2 gap-3">
-            <Input placeholder="Service name" value={form.serviceName} onChange={(e: any) => setForm({ ...form, serviceName: e.target.value })} />
-            <Input placeholder="Client name" value={form.clientName} onChange={(e: any) => setForm({ ...form, clientName: e.target.value })} />
+            <Input placeholder="Service name" value={form.serviceName} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, serviceName: e.target.value })} />
+            <Input placeholder="Client name" value={form.clientName} onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, clientName: e.target.value })} />
           </div>
           <div className="flex gap-3">
             <Button onClick={addEntry}>Save Entry</Button>
