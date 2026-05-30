@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 
 export const updateMe = catchAsync(async (req, res) => {
   const allowed = ['name', 'phone', 'city', 'state', 'preferredLanguage', 'notificationsEnabled', 'avatar', 'email'];
@@ -51,4 +52,15 @@ export const setDefaultAddress = catchAsync(async (req, res) => {
   address.isDefault = true;
   await user.save();
   res.json({ success: true, data: user.addresses });
+});
+
+export const uploadAvatar = catchAsync(async (req, res) => {
+  if (!req.file) throw new AppError('No file uploaded', 400);
+  const result = await uploadToCloudinary(req.file.buffer, `users/${req.user._id}/avatar`);
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { avatar: result.secure_url },
+    { new: true }
+  ).select('-password');
+  res.json({ success: true, message: 'Avatar uploaded', avatar: result.secure_url, user });
 });

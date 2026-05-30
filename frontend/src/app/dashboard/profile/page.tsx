@@ -6,7 +6,9 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useDispatch } from 'react-redux';
+import { updateUser } from '@/store/authSlice';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 
@@ -14,6 +16,10 @@ const LocationMap = dynamic(() => import('@/components/maps/LocationMap'), { ssr
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const dispatch = useDispatch();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [avatar, setAvatar] = useState<string>('');
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -31,9 +37,36 @@ export default function ProfilePage() {
         phone: user.phone || '',
         city: user.city || 'Patna',
       });
+      setAvatar(user.avatar || '');
       if (user.location) setPosition([user.location.lat, user.location.lng]);
     }
   }, [user]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File too large. Max 5MB.');
+      return;
+    }
+    setUploading(true);
+    const fd = new FormData();
+    fd.append('avatar', file);
+    try {
+      const { data } = await api.post('/users/avatar', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setAvatar(data.avatar);
+      dispatch(updateUser({ avatar: data.avatar }));
+      toast.success('Photo updated!');
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  };
 
   const save = async () => {
     try {
@@ -66,10 +99,23 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-xl space-y-6">
       <PageHeader title="My Profile" description="Manage your personal information" />
       <Card className="flex items-center gap-4 p-6">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-orange text-2xl font-bold text-white">
-          {form.name[0]}
-        </div>
-        <Button variant="outline" size="sm">Change Photo</Button>
+        {avatar ? (
+          <img src={avatar} alt="avatar" className="h-20 w-20 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-orange text-2xl font-bold text-white">
+            {form.name[0]}
+          </div>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+        <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+          {uploading ? 'Uploading...' : 'Change Photo'}
+        </Button>
       </Card>
       <Card className="space-y-4 p-6">
         {(['name', 'email', 'phone', 'city'] as const).map((field) => (

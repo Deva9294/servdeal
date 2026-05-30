@@ -52,6 +52,14 @@ export default function ProviderRegisterPage() {
     isAvailable: true,
   });
 
+  const [files, setFiles] = useState<Record<string, File | null>>({
+    aadhaar: null,
+    pan: null,
+    certificate: null,
+  });
+
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+
   const steps = isLoggedIn ? stepsExisting : stepsNew;
 
   useEffect(() => {
@@ -126,6 +134,26 @@ export default function ProviderRegisterPage() {
 
       await api.post('/providers/profile', profileData);
 
+      // Upload KYC documents if selected
+      const docTypes = ['aadhaar', 'pan', 'certificate'] as const;
+      for (const docType of docTypes) {
+        const file = files[docType];
+        if (file) {
+          setUploadingDoc(docType);
+          const fd = new FormData();
+          fd.append('document', file);
+          fd.append('docType', docType);
+          try {
+            await api.post('/providers/document', fd, {
+              headers: { 'Content-Type': 'multipart/form-data' },
+            });
+          } catch {
+            toast.error(`${docType} upload failed, please upload later from profile.`);
+          }
+          setUploadingDoc(null);
+        }
+      }
+
       toast.success('Application submitted! Awaiting admin approval.');
       router.push('/provider/dashboard');
     } catch (err: unknown) {
@@ -162,7 +190,19 @@ export default function ProviderRegisterPage() {
           <div className="space-y-3">
             <p className="text-xs text-slate-500">Aadhaar &amp; PAN for KYC verification</p>
             <Input placeholder="Aadhaar Number (12 digits)" maxLength={12} value={form.aadhaarNumber} onChange={(e) => update('aadhaarNumber', e.target.value.replace(/\D/g, '').slice(0, 12))} />
+            <label className="block">
+              <span className="text-xs text-slate-500">Aadhaar Document (image/PDF, max 5MB)</span>
+              <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm" onChange={(e) => setFiles((f) => ({ ...f, aadhaar: e.target.files?.[0] || null }))} />
+            </label>
             <Input placeholder="PAN Number" maxLength={10} value={form.panNumber} onChange={(e) => update('panNumber', e.target.value.toUpperCase().slice(0, 10))} />
+            <label className="block">
+              <span className="text-xs text-slate-500">PAN Document (image/PDF, max 5MB)</span>
+              <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm" onChange={(e) => setFiles((f) => ({ ...f, pan: e.target.files?.[0] || null }))} />
+            </label>
+            <label className="block">
+              <span className="text-xs text-slate-500">Skill Certificate (image/PDF, max 5MB)</span>
+              <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm" onChange={(e) => setFiles((f) => ({ ...f, certificate: e.target.files?.[0] || null }))} />
+            </label>
           </div>
         );
         case 2: return (
@@ -203,7 +243,19 @@ export default function ProviderRegisterPage() {
           <div className="space-y-3">
             <p className="text-xs text-slate-500">Welcome back, <strong>{existingUser?.name}</strong>. Complete your KYC to become a provider.</p>
             <Input placeholder="Aadhaar Number (12 digits)" maxLength={12} value={form.aadhaarNumber} onChange={(e) => update('aadhaarNumber', e.target.value.replace(/\D/g, '').slice(0, 12))} />
+            <label className="block">
+              <span className="text-xs text-slate-500">Aadhaar Document (image/PDF, max 5MB)</span>
+              <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm" onChange={(e) => setFiles((f) => ({ ...f, aadhaar: e.target.files?.[0] || null }))} />
+            </label>
             <Input placeholder="PAN Number" maxLength={10} value={form.panNumber} onChange={(e) => update('panNumber', e.target.value.toUpperCase().slice(0, 10))} />
+            <label className="block">
+              <span className="text-xs text-slate-500">PAN Document (image/PDF, max 5MB)</span>
+              <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm" onChange={(e) => setFiles((f) => ({ ...f, pan: e.target.files?.[0] || null }))} />
+            </label>
+            <label className="block">
+              <span className="text-xs text-slate-500">Skill Certificate (image/PDF, max 5MB)</span>
+              <input type="file" accept="image/*,.pdf" className="mt-1 block w-full text-sm" onChange={(e) => setFiles((f) => ({ ...f, certificate: e.target.files?.[0] || null }))} />
+            </label>
           </div>
         );
         case 1: return (
@@ -274,7 +326,7 @@ export default function ProviderRegisterPage() {
             </Button>
           ) : (
             <Button type="button" className="flex-1" onClick={submit} disabled={loading}>
-              {loading ? 'Submitting...' : 'Submit Application'}
+              {loading ? (uploadingDoc ? `Uploading ${uploadingDoc}...` : 'Submitting...') : 'Submit Application'}
             </Button>
           )}
         </div>
