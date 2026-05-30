@@ -9,10 +9,24 @@ import api from '@/lib/api';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 
+interface ProviderProfile {
+  overallStatus: string;
+  rejectionReason?: string;
+  isAvailable: boolean;
+  totalJobs: number;
+  rating: number;
+  completedJobs: number;
+  earnings: number;
+  skills: Array<{ name: string; experienceYears: number }>;
+  kycStatus: string;
+  bankStatus: string;
+  bio?: string;
+}
+
 export default function ProviderDashboardPage() {
-  const { user, isLoggedIn } = useAuth();
+  const { isLoggedIn } = useAuth();
   const router = useRouter();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [toggleLoading, setToggleLoading] = useState(false);
 
@@ -22,6 +36,7 @@ export default function ProviderDashboardPage() {
       return;
     }
     fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoggedIn]);
 
   const fetchProfile = async () => {
@@ -143,7 +158,7 @@ export default function ProviderDashboardPage() {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-slate-500">Skills & Services</h2>
             {profile.skills?.length > 0 ? (
               <div className="flex flex-wrap gap-2">
-                {profile.skills.map((skill: any, i: number) => (
+                {profile.skills.map((skill: { name: string; experienceYears: number }, i: number) => (
                   <span key={i} className="rounded-full bg-brand-navy/5 px-3 py-1 text-sm text-brand-navy">
                     {skill.name} ({skill.experienceYears} yrs)
                   </span>
