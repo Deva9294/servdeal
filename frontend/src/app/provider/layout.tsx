@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Button } from '@/components/ui/Button';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Bell as BellIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -21,7 +23,15 @@ const navItems = [
 ];
 
 export default function ProviderLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user, logout, isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoggedIn) router.replace('/login?redirect=/provider');
+  }, [isLoggedIn, router]);
+
+  if (!isLoggedIn) return null;
+
   const displayName = user?.name || 'Provider';
 
   return (

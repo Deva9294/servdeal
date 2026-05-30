@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Bell as BellIcon, MapPin as LocIcon } from 'lucide-react';
 import { BRAND } from '@/lib/constants';
 import { MobileNav } from '@/components/dashboard/MobileNav';
@@ -25,7 +27,15 @@ const navItems = [
 ];
 
 export default function CustomerDashboardLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user, logout, isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoggedIn) router.replace('/login?redirect=/dashboard');
+  }, [isLoggedIn, router]);
+
+  if (!isLoggedIn) return null;
+
   const firstLetter = user?.name?.charAt(0).toUpperCase() || 'U';
   const displayName = user?.name || 'User';
 

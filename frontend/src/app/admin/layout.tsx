@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Input } from '@/components/ui/Input';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { Search, Bell as BellIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -22,7 +24,15 @@ const navItems = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user, logout, isLoggedIn } = useAuth();
+
+  useEffect(() => {
+    if (!isLoggedIn) router.replace('/login?redirect=/admin');
+  }, [isLoggedIn, router]);
+
+  if (!isLoggedIn) return null;
+
   const firstLetter = user?.name?.charAt(0).toUpperCase() || 'A';
   const displayName = user?.name || 'Admin';
 
