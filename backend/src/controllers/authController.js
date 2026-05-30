@@ -91,7 +91,7 @@ export const sendOtp = catchAsync(async (req, res) => {
     smsSent = true;
   } catch (err) {
     console.error('[OTP SMS]', err.message);
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV === 'production' && process.env.OTP_EXPOSE_IN_RESPONSE !== 'true') {
       throw new AppError('Could not send SMS. Check SMS_PROVIDER settings.', 503);
     }
   }

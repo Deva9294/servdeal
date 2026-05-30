@@ -11,7 +11,13 @@ services:
       - key: PORT
         value: 5000
       - key: OTP_EXPOSE_IN_RESPONSE
-        value: false
+        value: true
+      - key: SMS_PROVIDER
+        value: msg91
+      - key: MSG91_AUTH_KEY
+        value: YOUR_MSG91_AUTH_KEY
+      - key: MSG91_OTP_TEMPLATE_ID
+        value: YOUR_MSG91_TEMPLATE_ID
 
   - type: web
     name: servdeal-frontend
