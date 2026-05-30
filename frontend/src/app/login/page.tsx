@@ -57,7 +57,11 @@ function LoginForm() {
 
       toast.success(`Welcome back, ${data.user.name}!`);
       const roleDest = resolveRoleDestination(data.user.role);
-      router.push(role === 'provider' ? '/provider' : roleDest);
+      if (data.user.role === 'provider') {
+        router.push('/provider/dashboard');
+      } else {
+        router.push(role === 'provider' ? '/provider' : roleDest);
+      }
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status?: number; data?: { message?: string } }; message?: string };
       const msg = axiosErr?.response?.data?.message;

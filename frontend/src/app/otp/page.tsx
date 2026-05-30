@@ -58,7 +58,7 @@ export default function OtpPage() {
         data.user.role === 'admin' || data.user.role === 'superadmin'
           ? '/admin'
           : data.user.role === 'provider'
-            ? '/provider'
+            ? '/provider/dashboard'
             : '/dashboard';
       router.push(dest);
     } catch (err: unknown) {

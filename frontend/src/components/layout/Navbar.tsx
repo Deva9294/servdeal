@@ -19,7 +19,7 @@ const links = [
 ];
 
 const moreLinks = [
-  { href: '/become-provider', label: 'Become a Provider' },
+  { href: '/provider/register', label: 'Become a Provider' },
   { href: '/worker', label: 'Find Work' },
   { href: '/employer', label: 'Hire Workers' },
 ];
