@@ -17,7 +17,7 @@ services:
       - key: MSG91_AUTH_KEY
         value: 519622AOt4gfygx6a133af2P1
       - key: MSG91_OTP_TEMPLATE_ID
-        value: SRVDL
+        value: SRVDEL
 
   - type: web
     name: servdeal-frontend
