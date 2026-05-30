@@ -116,7 +116,12 @@ function LoginForm() {
           </p>
           <p className="mt-2 text-sm">
             <Link href="/otp" className="text-brand-orange hover:underline">
-              Login with OTP instead
+              Login with Mobile OTP
+            </Link>
+          </p>
+          <p className="mt-1 text-sm">
+            <Link href="/verify-email" className="text-brand-orange hover:underline">
+              Login with Email OTP
             </Link>
           </p>
         </>

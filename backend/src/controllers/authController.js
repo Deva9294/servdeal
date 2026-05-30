@@ -5,6 +5,7 @@ import { catchAsync } from '../utils/catchAsync.js';
 import { signAccessToken, signRefreshToken } from '../utils/generateToken.js';
 import { generateOTP, saveOTP, verifyOTP } from '../services/otpService.js';
 import { sendSmsOtp } from '../services/smsService.js';
+import { sendEmailOtp, sendPasswordResetEmail } from '../services/emailService.js';
 import { normalizeIndianPhone } from '../utils/phone.js';
 
 const sendTokens = (user, res) => {
@@ -120,28 +121,106 @@ export const verifyOtpLogin = catchAsync(async (req, res) => {
   return sendTokens(user, res);
 });
 
-export const forgotPassword = catchAsync(async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
-  if (!user) throw new AppError('No account with that email', 404);
-  if (!user.phone) throw new AppError('No phone on file for this account', 400);
+// =========================================
+// Email OTP Authentication
+// =========================================
+
+export const sendEmailOtp = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new AppError('Valid email is required', 400);
+  }
+
+  let user = await User.findOne({ email });
+  if (!user) {
+    throw new AppError('Email not registered. Please sign up first.', 404);
+  }
 
   const otp = generateOTP();
   await saveOTP(user._id, otp);
 
-  let smsSent = false;
+  let emailSent = false;
   try {
-    await sendSmsOtp(user.phone, otp);
-    smsSent = true;
+    await sendEmailOtp(email, user.name, otp);
+    emailSent = true;
   } catch (err) {
-    console.error('[Forgot OTP SMS]', err.message);
+    console.error('[Email OTP]', err.message);
+  }
+
+  const exposeOtp =
+    !emailSent &&
+    (process.env.NODE_ENV === 'development' || process.env.OTP_EXPOSE_IN_RESPONSE === 'true');
+
+  res.json({
+    success: true,
+    message: emailSent ? 'OTP sent to your email' : 'OTP generated (email not configured)',
+    email,
+    ...(exposeOtp && { otp }),
+  });
+});
+
+export const verifyEmailOtp = catchAsync(async (req, res) => {
+  const { email, otp } = req.body;
+  const user = await User.findOne({ email }).select('+otp +otpExpires');
+  if (!user) throw new AppError('User not found', 404);
+
+  const valid = await verifyOTP(user, otp);
+  if (!valid) throw new AppError('Invalid or expired OTP', 400);
+  return sendTokens(user, res);
+});
+
+export const resendEmailOtp = catchAsync(async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) throw new AppError('User not found', 404);
+
+  const otp = generateOTP();
+  await saveOTP(user._id, otp);
+
+  let emailSent = false;
+  try {
+    await sendEmailOtp(email, user.name, otp);
+    emailSent = true;
+  } catch (err) {
+    console.error('[Resend Email OTP]', err.message);
+  }
+
+  const exposeOtp =
+    !emailSent &&
+    (process.env.NODE_ENV === 'development' || process.env.OTP_EXPOSE_IN_RESPONSE === 'true');
+
+  res.json({
+    success: true,
+    message: emailSent ? 'New OTP sent to your email' : 'OTP regenerated (email not configured)',
+    ...(exposeOtp && { otp }),
+  });
+});
+
+// =========================================
+// Forgot Password (via Email)
+// =========================================
+
+export const forgotPassword = catchAsync(async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) throw new AppError('No account with that email', 404);
+
+  const otp = generateOTP();
+  await saveOTP(user._id, otp);
+
+  let emailSent = false;
+  try {
+    await sendPasswordResetEmail(user.email, user.name, otp);
+    emailSent = true;
+  } catch (err) {
+    console.error('[Forgot Password Email]', err.message);
   }
 
   res.json({
     success: true,
-    message: smsSent
-      ? `OTP sent to ******${user.phone.slice(-4)}`
-      : 'OTP generated — configure SMS to deliver',
-    ...((!smsSent && process.env.NODE_ENV === 'development') && { otp }),
+    message: emailSent
+      ? `OTP sent to ${user.email}`
+      : 'OTP generated — configure email to deliver',
+    ...((!emailSent && process.env.NODE_ENV === 'development') && { otp }),
   });
 });
 

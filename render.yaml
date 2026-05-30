@@ -18,6 +18,10 @@ services:
         value: 519622AOt4gfygx6a133af2P1
       - key: MSG91_OTP_TEMPLATE_ID
         value: SRVDEL
+      - key: RESEND_API_KEY
+        value: re_xxxxxxxx
+      - key: EMAIL_FROM
+        value: noreply@servdeal.in
 
   - type: web
     name: servdeal-frontend

@@ -9,12 +9,31 @@ import { formatCurrency } from '@/lib/utils';
 import { payWithPayU } from '@/lib/payu';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function WalletPage() {
   const [amount, setAmount] = useState('500');
   const [loading, setLoading] = useState(false);
   const qc = useQueryClient();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    if (payment === 'success') {
+      toast.success('Wallet topped up successfully!');
+      qc.invalidateQueries({ queryKey: ['wallet'] });
+      // Clean URL
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } else if (payment === 'failed') {
+      toast.error('Payment failed. Please try again.');
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    }
+  }, [searchParams, qc]);
 
   const { data } = useQuery({
     queryKey: ['wallet'],
