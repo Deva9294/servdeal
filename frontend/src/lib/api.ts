@@ -36,7 +36,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401 && typeof window !== 'undefined') {
+    const status = err.response?.status;
+    const url = err.config?.url || '';
+    // Skip redirect for /auth/me (handled by AuthInit) and for non-401 errors
+    const isAuthMe = url.includes('/auth/me');
+    if (status === 401 && typeof window !== 'undefined' && !isAuthMe) {
       localStorage.removeItem('token');
       document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       window.location.href = '/login';

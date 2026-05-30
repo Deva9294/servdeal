@@ -16,7 +16,14 @@ export function AuthInit() {
       .then(({ data }) => {
         dispatch(setCredentials({ user: data.user, token }));
       })
-      .catch(() => dispatch(logout()));
+      .catch((err) => {
+        // Only logout on actual 401 auth failure, not on network/API errors
+        const status = (err as { response?: { status?: number } }).response?.status;
+        if (status === 401) {
+          dispatch(logout());
+        }
+        // For network errors (wrong API URL, backend down), keep token for retry
+      });
   }, [dispatch]);
 
   return null;
