@@ -2,6 +2,7 @@
 
 import {
   LayoutDashboard, Calendar, Wallet, MapPin, Star, Tag, Bell, HelpCircle, Settings, Gift, MessageCircle, LogOut,
+  Wrench, GraduationCap,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import Link from 'next/link';
@@ -20,6 +21,8 @@ const navItems = [
   { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
   { href: '/dashboard/offers', label: 'Offers & Coupons', icon: Tag },
   { href: '/dashboard/chat', label: 'Chat', icon: MessageCircle },
+  { href: '/tools', label: 'Tool Marketplace', icon: Wrench },
+  { href: '/training', label: 'Training Center', icon: GraduationCap },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, badge: 3 },
   { href: '/dashboard/support', label: 'Help & Support', icon: HelpCircle },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },

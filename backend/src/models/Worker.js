@@ -26,6 +26,13 @@ const workerSchema = new mongoose.Schema(
     },
     portfolioUrls: [String],
     certificates: [String],
+    badges: [
+      {
+        badge: { type: mongoose.Schema.Types.ObjectId, ref: 'Badge' },
+        awardedAt: { type: Date, default: Date.now },
+        verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      },
+    ],
     verificationStatus: {
       type: String,
       enum: ['pending', 'verified', 'rejected'],

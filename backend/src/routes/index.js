@@ -18,6 +18,15 @@ import employerRoutes from './employerRoutes.js';
 import jobPostRoutes from './jobPostRoutes.js';
 import skillRoutes from './skillRoutes.js';
 import providerProfileRoutes from './providerProfileRoutes.js';
+import workerCardRoutes from './workerCardRoutes.js';
+import badgeRoutes from './badgeRoutes.js';
+import workHistoryRoutes from './workHistoryRoutes.js';
+import jobAlertRoutes from './jobAlertRoutes.js';
+import teamRoutes from './teamRoutes.js';
+import trainingRoutes from './trainingRoutes.js';
+import toolRoutes from './toolRoutes.js';
+import referralRoutes from './referralRoutes.js';
+import matchingRoutes from './matchingRoutes.js';
 
 const router = Router();
 
@@ -44,6 +53,15 @@ router.use('/employers', employerRoutes);
 router.use('/jobs', jobPostRoutes);
 router.use('/skills', skillRoutes);
 router.use('/providers', providerProfileRoutes);
+router.use('/worker-cards', workerCardRoutes);
+router.use('/badges', badgeRoutes);
+router.use('/work-history', workHistoryRoutes);
+router.use('/job-alerts', jobAlertRoutes);
+router.use('/teams', teamRoutes);
+router.use('/training', trainingRoutes);
+router.use('/tools', toolRoutes);
+router.use('/referrals', referralRoutes);
+router.use('/matching', matchingRoutes);
 
 router.get('/health', (req, res) => {
   res.json({ success: true, message: 'ServDeal API is running' });

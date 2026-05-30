@@ -13,15 +13,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 const links = [
   { href: '/', label: 'Home' },
   { href: '/services', label: 'Services' },
+  { href: '/tools', label: 'Tool Rentals' },
+  { href: '/training', label: 'Training' },
   { href: '/how-it-works', label: 'How It Works' },
   { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' },
 ];
 
 const moreLinks = [
   { href: '/provider/register', label: 'Become a Provider' },
   { href: '/worker', label: 'Find Work' },
   { href: '/employer', label: 'Hire Workers' },
+  { href: '/worker/card', label: 'Worker Card' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 export function Navbar() {
