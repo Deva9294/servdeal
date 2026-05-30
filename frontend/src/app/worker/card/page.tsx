@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { QrCode, Award, Star, Briefcase, Shield, Download } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface WorkerCardData {
   cardId: string;
@@ -52,7 +54,7 @@ export default function WorkerCardPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Loading...</div>;
+  if (loading) return <SkeletonPulse />;
 
   if (!card) {
     return (

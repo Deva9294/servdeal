@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Plus, Image, Star, Trash2 } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface WorkEntry {
   _id: string;
@@ -66,7 +68,7 @@ export default function PortfolioPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Loading...</div>;
+  if (loading) return <SkeletonPulse />;
 
   return (
     <div className="mx-auto max-w-5xl">
@@ -79,7 +81,7 @@ export default function PortfolioPage() {
         <Card className="mb-6 p-6 space-y-4">
           <h3 className="font-bold text-brand-navy">Add Work Entry</h3>
           <Input placeholder="Title" value={form.title} onChange={(e: any) => setForm({ ...form, title: e.target.value })} />
-          <textarea placeholder="Description" className="w-full rounded-xl border px-4 py-2 text-sm" rows={3} value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} />
+          <textarea placeholder="Description" className="w-full rounded-xl border border-slate-200 px-4 py-2 text-sm focus:border-brand-orange focus:ring-1 focus:ring-brand-orange outline-none" rows={3} value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} />
           <div className="grid grid-cols-2 gap-3">
             <Input placeholder="Service name" value={form.serviceName} onChange={(e: any) => setForm({ ...form, serviceName: e.target.value })} />
             <Input placeholder="Client name" value={form.clientName} onChange={(e: any) => setForm({ ...form, clientName: e.target.value })} />
@@ -92,10 +94,7 @@ export default function PortfolioPage() {
       )}
 
       {entries.length === 0 ? (
-        <Card className="p-8 text-center">
-          <Image className="mx-auto h-12 w-12 text-slate-300" />
-          <p className="mt-3 text-slate-500">No portfolio entries yet. Add your first work!</p>
-        </Card>
+        <EmptyState icon={Image} title="No Portfolio Entries" description="No portfolio entries yet. Add your first work!" actionLabel="Add Work" onAction={() => setShowForm(true)} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {entries.map((entry) => (

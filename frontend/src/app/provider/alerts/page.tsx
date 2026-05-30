@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { MapPin, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface JobAlert {
   _id: string;
@@ -52,7 +54,7 @@ export default function JobAlertsPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Loading...</div>;
+  if (loading) return <SkeletonPulse />;
 
   const pending = alerts.filter((a) => a.status === 'pending');
 
@@ -61,10 +63,7 @@ export default function JobAlertsPage() {
       <PageHeader title="Nearby Job Alerts" description="AI-matched jobs near your location" />
 
       {pending.length === 0 ? (
-        <Card className="p-8 text-center">
-          <Clock className="mx-auto h-12 w-12 text-slate-300" />
-          <p className="mt-3 text-slate-500">No pending job alerts. Check back soon!</p>
-        </Card>
+        <EmptyState icon={Clock} title="No Job Alerts" description="No pending job alerts right now. Check back soon!" />
       ) : (
         <div className="space-y-4">
           {pending.map((alert) => (

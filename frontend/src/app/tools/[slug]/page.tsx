@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Wrench, MapPin, Star, User, Phone } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 interface ToolDetail {
   _id: string;
@@ -63,7 +64,7 @@ export default function ToolDetailPage() {
     }
   };
 
-  if (loading) return <PublicLayout><div className="text-center py-12 text-slate-500">Loading...</div></PublicLayout>;
+  if (loading) return <PublicLayout><SkeletonPulse /></PublicLayout>;
   if (!tool) return <PublicLayout><div className="text-center py-12 text-slate-500">Tool not found</div></PublicLayout>;
 
   return (

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Award, Shield, Star, CheckCircle } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 interface Badge {
   _id: string;
@@ -49,7 +50,7 @@ export default function BadgesPage() {
 
   const hasBadge = (id: string) => myBadges.some((b) => b.badge._id === id);
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Loading...</div>;
+  if (loading) return <SkeletonPulse />;
 
   const categories = ['skill', 'safety', 'quality', 'experience', 'trust', 'special'];
 

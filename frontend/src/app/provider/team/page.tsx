@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Users, Plus, Trash2, Star } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface TeamMember {
   worker: { _id: string; name: string; avatar: string; skills: string[]; experienceYears: number };
@@ -61,18 +63,14 @@ export default function TeamPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Loading...</div>;
+  if (loading) return <SkeletonPulse />;
 
   if (!team) {
     return (
       <div className="mx-auto max-w-xl">
         <PageHeader title="My Team" description="Create a team to take on bigger projects" />
-        <Card className="p-8 text-center">
-          <Users className="mx-auto h-12 w-12 text-slate-300" />
-          <p className="mt-3 text-slate-500">You are not part of any team yet.</p>
-          {!creating ? (
-            <Button className="mt-4" onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" /> Create Team</Button>
-          ) : (
+        <EmptyState icon={Users} title="No Team Yet" description="You are not part of any team yet. Create one to take on bigger projects!" actionLabel="Create Team" onAction={() => setCreating(true)} />
+        {creating && (
             <div className="mt-4 space-y-3 text-left">
               <Input placeholder="Team name" value={form.name} onChange={(e: any) => setForm({ ...form, name: e.target.value })} />
               <Input placeholder="Description" value={form.description} onChange={(e: any) => setForm({ ...form, description: e.target.value })} />
@@ -83,7 +81,6 @@ export default function TeamPage() {
               </div>
             </div>
           )}
-        </Card>
       </div>
     );
   }

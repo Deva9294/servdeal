@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { GraduationCap, Clock, Award, BookOpen } from 'lucide-react';
 import Link from 'next/link';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 interface Course {
   _id: string;
@@ -48,11 +49,16 @@ export default function TrainingPage() {
 
   return (
     <PublicLayout>
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-brand-navy">Training & Certification Center</h1>
-          <p className="mt-2 text-slate-500">Upskill yourself with certified courses and earn verification badges</p>
+      <div className="bg-gradient-to-br from-brand-navy to-blue-900 py-16 text-white">
+        <div className="mx-auto max-w-6xl px-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10 mb-4">
+            <GraduationCap className="h-8 w-8 text-brand-orange" />
+          </div>
+          <h1 className="text-3xl font-bold">Training & Certification Center</h1>
+          <p className="mt-2 text-white/70">Upskill yourself with certified courses and earn verification badges</p>
         </div>
+      </div>
+      <div className="mx-auto max-w-6xl px-4 py-12">
 
         <div className="mb-6 flex flex-wrap gap-2">
           {categories.map((cat) => (
@@ -67,7 +73,7 @@ export default function TrainingPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-slate-500">Loading courses...</div>
+          <SkeletonPulse />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((course) => (

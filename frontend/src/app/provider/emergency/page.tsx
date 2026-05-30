@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Zap, Shield, Phone, MapPin } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 export default function EmergencyModePage() {
   const [profile, setProfile] = useState<any>(null);
@@ -40,7 +41,7 @@ export default function EmergencyModePage() {
     }
   };
 
-  if (loading) return <div className="text-center py-12 text-slate-500">Loading...</div>;
+  if (loading) return <SkeletonPulse />;
 
   return (
     <div className="mx-auto max-w-3xl">

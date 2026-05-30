@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Sparkles, MapPin, Star, Briefcase, CheckCircle } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface MatchedJob {
   _id: string;
@@ -48,7 +50,7 @@ export default function AIMatchingPage() {
     }
   };
 
-  if (loading) return <div className="text-center py-12 text-slate-500">AI is finding best jobs for you...</div>;
+  if (loading) return <SkeletonPulse />;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -65,10 +67,7 @@ export default function AIMatchingPage() {
       </Card>
 
       {jobs.length === 0 ? (
-        <Card className="p-8 text-center">
-          <Briefcase className="mx-auto h-12 w-12 text-slate-300" />
-          <p className="mt-3 text-slate-500">No matching jobs right now. Update your skills to get better matches!</p>
-        </Card>
+        <EmptyState icon={Briefcase} title="No Matches Yet" description="No matching jobs right now. Update your skills to get better matches!" />
       ) : (
         <div className="space-y-4">
           {jobs.map((job) => (

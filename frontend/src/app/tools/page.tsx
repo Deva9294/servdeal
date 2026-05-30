@@ -9,6 +9,7 @@ import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Wrench, MapPin, Star } from 'lucide-react';
 import Link from 'next/link';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 interface ToolItem {
   _id: string;
@@ -48,11 +49,16 @@ export default function ToolsPage() {
 
   return (
     <PublicLayout>
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-brand-navy">Tool Rental Marketplace</h1>
-          <p className="mt-2 text-slate-500">Rent professional tools by the day. Save money, get the job done.</p>
+      <div className="bg-gradient-to-br from-brand-navy to-blue-900 py-16 text-white">
+        <div className="mx-auto max-w-6xl px-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/10 mb-4">
+            <Wrench className="h-8 w-8 text-brand-orange" />
+          </div>
+          <h1 className="text-3xl font-bold">Tool Rental Marketplace</h1>
+          <p className="mt-2 text-white/70">Rent professional tools by the day. Save money, get the job done.</p>
         </div>
+      </div>
+      <div className="mx-auto max-w-6xl px-4 py-12">
 
         <div className="mx-auto mb-8 max-w-lg">
           <Input
@@ -64,7 +70,7 @@ export default function ToolsPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-slate-500">Loading tools...</div>
+          <SkeletonPulse />
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {filtered.map((tool) => (

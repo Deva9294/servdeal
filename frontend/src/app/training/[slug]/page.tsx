@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Clock, Award, BookOpen, CheckCircle } from 'lucide-react';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 interface CourseDetail {
   _id: string;
@@ -54,7 +55,7 @@ export default function CourseDetailPage() {
     }
   };
 
-  if (loading) return <PublicLayout><div className="text-center py-12 text-slate-500">Loading...</div></PublicLayout>;
+  if (loading) return <PublicLayout><SkeletonPulse /></PublicLayout>;
   if (!course) return <PublicLayout><div className="text-center py-12 text-slate-500">Course not found</div></PublicLayout>;
 
   return (

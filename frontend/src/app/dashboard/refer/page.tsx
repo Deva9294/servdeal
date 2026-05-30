@@ -8,6 +8,8 @@ import { Gift, Copy, Users, Trophy, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
+import { SkeletonPulse } from '@/components/ui/SkeletonCard';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 interface ReferralData {
   totalReferrals: number;
@@ -76,7 +78,7 @@ export default function ReferPage() {
         <div>
           <p className="text-sm text-slate-500">Share link</p>
           <div className="mt-1 flex items-center gap-2">
-            <input readOnly value={link} className="flex-1 rounded-lg border px-3 py-2 text-sm" />
+            <input readOnly value={link} className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-orange" />
             <Button onClick={() => copy(link)}>Copy Link</Button>
           </div>
         </div>
@@ -84,8 +86,8 @@ export default function ReferPage() {
 
       <Card className="p-5">
         <h3 className="mb-3 font-bold text-brand-navy flex items-center gap-2"><Trophy className="h-4 w-4" /> Your Referrals</h3>
-        {loading ? <p className="text-sm text-slate-500">Loading...</p> : data?.referredUsers?.length === 0 ? (
-          <p className="text-sm text-slate-500">No referrals yet. Share your code!</p>
+        {loading ? <SkeletonPulse /> : data?.referredUsers?.length === 0 ? (
+          <EmptyState icon={Users} title="No Referrals Yet" description="No referrals yet. Share your code with friends!" />
         ) : (
           <div className="space-y-2">
             {data?.referredUsers?.map((u, i) => (

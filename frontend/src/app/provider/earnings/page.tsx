@@ -100,7 +100,13 @@ export default function ProviderEarningsPage() {
         {txLoading ? (
           <div className="space-y-2"><Skeleton className="h-10" /><Skeleton className="h-10" /><Skeleton className="h-10" /></div>
         ) : transactions.length === 0 ? (
-          <p className="text-sm text-slate-500">No transactions yet</p>
+          <div className="py-8 text-center">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 mb-3">
+              <Wallet className="h-8 w-8 text-brand-orange" />
+            </div>
+            <p className="text-sm font-semibold text-brand-navy">No transactions yet</p>
+            <p className="text-xs text-slate-500 mt-1">Complete jobs to see earnings here</p>
+          </div>
         ) : (
           <div className="space-y-2">
             {transactions.slice(0, 10).map((tx) => (
