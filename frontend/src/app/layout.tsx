@@ -24,20 +24,12 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image', title: BRAND.name, description: BRAND.tagline },
   robots: { index: true, follow: true },
-  icons: {
-    icon: '/images/logo-mono.png',
-    shortcut: '/images/logo-mono.png',
-    apple: '/images/logo-mono.png',
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" type="image/png" href="/images/logo-mono.png" />
-        <link rel="shortcut icon" type="image/png" href="/images/logo-mono.png" />
-        <link rel="apple-touch-icon" href="/images/logo-mono.png" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#ff7a00" />
       </head>
