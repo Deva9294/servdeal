@@ -26,7 +26,15 @@ export function Footer() {
     <footer className="bg-brand-navy text-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 md:grid-cols-2 lg:grid-cols-4 lg:px-6">
         <div>
-          <Logo monochrome />
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white/10">
+              <Logo monochrome className="h-8 w-auto" />
+            </div>
+            <div>
+              <p className="text-lg font-bold">{BRAND.name}</p>
+              <p className="text-[10px] tracking-wider text-white/50">{BRAND.tagline}</p>
+            </div>
+          </div>
           <p className="mt-4 text-sm text-white/70">
             Book trusted professionals for all your home and daily services — fast, easy and reliable.
           </p>
