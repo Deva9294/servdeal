@@ -3,6 +3,7 @@ services:
     name: servdeal-backend
     runtime: node
     rootDir: backend
+    buildCommand: npm install
     startCommand: node src/server.js
     envVars:
       - key: NODE_ENV
