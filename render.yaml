@@ -17,8 +17,8 @@ services:
     name: servdeal-frontend
     env: node
     rootDir: frontend
-    buildCommand: npm install ; npm run build
-    startCommand: npx next start
+    buildCommand: npm install && npm run build
+    startCommand: npx next start -p $PORT
     envVars:
       - key: NODE_ENV
         value: production
