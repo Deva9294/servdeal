@@ -140,18 +140,14 @@ NEXT_PUBLIC_SOCKET_URL=https://api.yourdomain.com
 
 ## Deployment Platforms
 
-### Backend Options
-- **Heroku**: Free tier available, easy deploy
-- **Railway**: Pay-as-you-go, good for Node.js
-- **AWS (EC2/Lightsail)**: Most flexible, more setup
-- **DigitalOcean App Platform**: Docker support
-- **Render**: Modern Node.js hosting
+Both **Backend** and **Frontend** deploy on **Railway**:
+- Railway supports Node.js (backend) and Next.js (frontend) both
+- SSL + custom domain support built-in
+- Auto-deploy on git push
 
-### Frontend Options
-- **Vercel**: Optimized for Next.js (recommended)
-- **Netlify**: Good for static/SSR
-- **AWS S3 + CloudFront**: Static hosting
-- **Any Node.js platform**: Can run Next.js server
+Railway config files already created:
+- `backend/railway.toml`
+- `frontend/railway.toml`
 
 ---
 
