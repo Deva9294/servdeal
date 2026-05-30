@@ -43,7 +43,10 @@ export default function OtpPage() {
     try {
       const { data } = await api.post('/auth/otp/verify', { phone, otp });
       dispatch(setCredentials({ user: data.user, token: data.token }));
-      document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      const isProd = window.location.protocol === 'https:';
+      const sameSite = isProd ? 'None' : 'Lax';
+      const secure = isProd ? 'Secure' : '';
+      document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=${sameSite}; ${secure}`.replace(/; $/, '');
       toast.success('Logged in successfully!');
       const dest =
         data.user.role === 'admin' || data.user.role === 'superadmin'
