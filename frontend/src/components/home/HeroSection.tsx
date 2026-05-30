@@ -2,10 +2,19 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Search, MapPin, Shield, Star, Users } from 'lucide-react';
+import { Search, MapPin, Shield, Star, Users, Wrench, Zap, Droplets, Home, Sparkles, Clock, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { BRAND } from '@/lib/constants';
+
+const serviceCards = [
+  { icon: Zap, label: 'Electrician', color: 'bg-amber-50 text-amber-600', delay: 0 },
+  { icon: Wrench, label: 'AC Repair', color: 'bg-blue-50 text-blue-600', delay: 0.1 },
+  { icon: Droplets, label: 'Plumbing', color: 'bg-cyan-50 text-cyan-600', delay: 0.2 },
+  { icon: Home, label: 'Cleaning', color: 'bg-green-50 text-green-600', delay: 0.3 },
+  { icon: Sparkles, label: 'Painting', color: 'bg-purple-50 text-purple-600', delay: 0.4 },
+  { icon: Clock, label: 'On Time', color: 'bg-rose-50 text-rose-600', delay: 0.5 },
+];
 
 export function HeroSection() {
   return (
@@ -41,23 +50,53 @@ export function HeroSection() {
           </div>
         </motion.div>
 
+        {/* Right Side - Floating Service Cards */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
           className="relative flex justify-center"
         >
-          <div className="relative h-80 w-80 rounded-full bg-gradient-to-br from-orange-100 to-blue-100 lg:h-96 lg:w-96">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-brand-navy text-6xl">👨‍🔧</div>
-                <p className="mt-4 font-semibold text-brand-navy">Verified Pro at your door</p>
-              </div>
+          <div className="relative">
+            {/* Background circle */}
+            <div className="absolute inset-0 -z-10 mx-auto h-80 w-80 rounded-full bg-gradient-to-br from-orange-100/60 to-blue-100/60 blur-2xl lg:h-96 lg:w-96" />
+
+            {/* Floating cards grid */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {serviceCards.map((card) => (
+                <motion.div
+                  key={card.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: card.delay + 0.3 }}
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className={`flex flex-col items-center gap-2 rounded-2xl p-4 ${card.color} bg-white/80 shadow-lg backdrop-blur-sm`}
+                >
+                  <card.icon className="h-8 w-8" />
+                  <span className="text-xs font-semibold">{card.label}</span>
+                </motion.div>
+              ))}
             </div>
-            <div className="absolute -right-4 top-8 rounded-2xl bg-white p-3 card-shadow">
-              <p className="text-xs text-slate-500">ServDeal App</p>
-              <div className="mt-1 h-24 w-16 rounded-lg bg-brand-navy/10" />
-            </div>
+
+            {/* Floating verified badge */}
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -right-4 -top-4 flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg"
+            >
+              <BadgeCheck className="h-5 w-5 text-green-500" />
+              <span className="text-xs font-semibold text-brand-navy">Verified Pro</span>
+            </motion.div>
+
+            {/* Floating rating */}
+            <motion.div
+              animate={{ y: [0, 10, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+              className="absolute -bottom-4 -left-4 flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg"
+            >
+              <Star className="h-5 w-5 fill-brand-orange text-brand-orange" />
+              <span className="text-xs font-semibold text-brand-navy">4.8 Rating</span>
+            </motion.div>
           </div>
         </motion.div>
       </div>

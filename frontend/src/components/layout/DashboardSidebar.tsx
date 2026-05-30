@@ -27,7 +27,7 @@ export function DashboardSidebar({
       )}
     >
       <div className="p-4">
-        <Logo />
+        <Logo monochrome={dark} />
         {title && <p className="mt-2 text-xs text-white/60">{title}</p>}
       </div>
       <nav className="flex-1 space-y-1 px-3">
