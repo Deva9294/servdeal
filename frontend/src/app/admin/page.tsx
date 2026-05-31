@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/Badge';
 import { formatCurrency } from '@/lib/utils';
 import api from '@/lib/api';
 import {
-  AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Users, Wrench, Calendar, DollarSign, Clock, TrendingUp, TrendingDown, ShieldCheck } from 'lucide-react';
+import { Users, Wrench, Calendar, DollarSign, Clock, TrendingUp, TrendingDown, ShieldCheck, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const COLORS = ['#ff7a00', '#0b1f4d', '#94a3b8', '#22c55e'];
@@ -62,8 +62,19 @@ export default function AdminDashboard() {
     { name: 'Cancelled', value: stats.bookingStats?.cancelled || 5 },
   ];
 
+  const subStats = [
+    { label: 'Completed Bookings', value: stats.bookingStats?.completed?.toLocaleString('en-IN') || '0', icon: CheckCircle, color: 'bg-green-50 text-green-600' },
+    { label: 'Cancelled Bookings', value: stats.bookingStats?.cancelled?.toLocaleString('en-IN') || '0', icon: XCircle, color: 'bg-red-50 text-red-600' },
+    { label: 'Total Revenue', value: `₹${((stats.totalEarnings || 0) / 100000).toFixed(2)}L`, icon: DollarSign, color: 'bg-blue-50 text-blue-600' },
+    { label: 'This Month Revenue', value: `₹${((stats.totalEarnings || 0) / 100000 / 12).toFixed(2)}L`, icon: DollarSign, color: 'bg-purple-50 text-purple-600' },
+  ];
+
+  const getInitials = (name: string) => name?.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+  const avatarColors = ['bg-blue-500', 'bg-green-500', 'bg-orange-500', 'bg-purple-500', 'bg-pink-500'];
+
   return (
     <div className="space-y-6">
+      {/* Main Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {statCards.map((s) => (
           <Card key={s.label} className="p-5">
@@ -82,17 +93,24 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* Charts + Recent Bookings */}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
           <h3 className="font-semibold">Bookings Overview</h3>
           <div className="mt-4 h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={stats.monthlyBookings?.map((d: { _id: number; count: number }) => ({ day: d._id, count: d.count })) || []}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
+                <defs>
+                  <linearGradient id="adminChart" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#0b1f4d" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#0b1f4d" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="day" tick={{fontSize: 12}} />
+                <YAxis tick={{fontSize: 12}} />
                 <Tooltip />
-                <Area type="monotone" dataKey="count" stroke="#0b1f4d" fill="#0b1f4d" fillOpacity={0.1} />
+                <Area type="monotone" dataKey="count" stroke="#0b1f4d" strokeWidth={2} fill="url(#adminChart)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -102,14 +120,19 @@ export default function AdminDashboard() {
           <h3 className="font-semibold">Recent Bookings</h3>
           <div className="mt-4 space-y-3">
             {(stats.recentBookings || []).length === 0 && <p className="text-sm text-slate-500">No recent bookings.</p>}
-            {(stats.recentBookings || []).slice(0, 5).map((b: { bookingId: string; service: { name: string }; customer: { name: string }; status: string; amount: number }) => (
+            {(stats.recentBookings || []).slice(0, 5).map((b: { bookingId: string; service: { name: string }; customer: { name: string; avatar?: string }; status: string; amount: number }) => (
               <div key={b.bookingId} className="flex items-center justify-between border-b pb-3">
-                <div>
-                  <p className="font-medium">#{b.bookingId}</p>
-                  <p className="text-xs text-slate-500">{b.service?.name} · {b.customer?.name}</p>
+                <div className="flex items-center gap-3">
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-full text-white text-xs font-bold ${avatarColors[b.bookingId?.length % avatarColors.length]}`}>
+                    {getInitials(b.customer?.name)}
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{b.customer?.name}</p>
+                    <p className="text-xs text-slate-500">{b.service?.name}</p>
+                  </div>
                 </div>
                 <div className="text-right">
-                  <Badge status={b.status}>{b.status}</Badge>
+                  <Badge status={b.status} className="text-xs">{b.status}</Badge>
                   <p className="text-sm font-bold">{formatCurrency(b.amount)}</p>
                 </div>
               </div>
@@ -118,24 +141,64 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+      {/* Sub Stats */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {subStats.map((s) => (
+          <Card key={s.label} className="p-4">
+            <div className="flex items-center gap-3">
+              <div className={`rounded-full p-2.5 ${s.color}`}>
+                <s.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs text-slate-500">{s.label}</p>
+                <p className="text-lg font-bold">{s.value}</p>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Top Providers + Charts */}
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
-          <h3 className="font-semibold">Top Providers</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Top Providers</h3>
+          </div>
           <table className="mt-4 w-full text-sm">
             <thead>
-              <tr className="border-b text-left text-slate-500">
-                <th className="pb-2">#</th><th>Provider</th><th>Bookings</th><th>Rating</th><th>Earnings</th><th>Status</th>
+              <tr className="border-b text-left text-slate-500 text-xs uppercase">
+                <th className="pb-3 font-medium">#</th>
+                <th className="pb-3 font-medium">Provider</th>
+                <th className="pb-3 font-medium">Bookings</th>
+                <th className="pb-3 font-medium">Rating</th>
+                <th className="pb-3 font-medium">Earnings</th>
+                <th className="pb-3 font-medium">Status</th>
+                <th className="pb-3 font-medium">Action</th>
               </tr>
             </thead>
             <tbody>
               {(stats.topProviders || []).map((p: { user: { name: string }; completedJobs: number; rating: number; totalEarnings: number }, i: number) => (
-                <tr key={i} className="border-b">
-                  <td className="py-3">{i + 1}</td>
-                  <td className="font-medium">{p.user?.name}</td>
-                  <td>{p.completedJobs}</td>
-                  <td>★ {p.rating}</td>
-                  <td>{formatCurrency(p.totalEarnings)}</td>
-                  <td><Badge status="active">Active</Badge></td>
+                <tr key={i} className="border-b last:border-0">
+                  <td className="py-3 text-slate-500">{i + 1}</td>
+                  <td className="py-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-white text-xs font-bold ${avatarColors[i % avatarColors.length]}`}>
+                        {getInitials(p.user?.name)}
+                      </div>
+                      <span className="font-medium">{p.user?.name}</span>
+                    </div>
+                  </td>
+                  <td className="py-3">{p.completedJobs}</td>
+                  <td className="py-3 flex items-center gap-1">
+                    <span className="text-amber-500">★</span> {p.rating}
+                  </td>
+                  <td className="py-3 font-medium">{formatCurrency(p.totalEarnings)}</td>
+                  <td className="py-3"><Badge status="active" className="text-xs">Active</Badge></td>
+                  <td className="py-3">
+                    <button className="rounded-lg p-1.5 hover:bg-slate-100 text-slate-500">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -152,6 +215,7 @@ export default function AdminDashboard() {
                     {userPie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -165,6 +229,7 @@ export default function AdminDashboard() {
                     {bookingPie.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
                 </PieChart>
               </ResponsiveContainer>
             </div>

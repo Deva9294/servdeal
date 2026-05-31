@@ -2,35 +2,32 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { TrendingUp, Wallet, BarChart3 } from 'lucide-react';
+import { Award } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export function ProviderCTA() {
   return (
-    <section className="bg-brand-navy py-16 text-white lg:py-20">
-      <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 lg:grid-cols-3 lg:px-6">
-        <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
-          <h2 className="text-3xl font-bold">Become a Top Rated Provider</h2>
-          <p className="mt-3 text-white/70">Join thousands of professionals earning with ServDeal</p>
-          <Link href="/become-provider" className="mt-6 inline-block">
-            <Button>Join as Provider</Button>
+    <section className="py-12 lg:py-16">
+      <div className="mx-auto max-w-7xl px-4 lg:px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="flex flex-col sm:flex-row items-center justify-between gap-6 rounded-2xl bg-gradient-to-r from-orange-50 to-amber-50 p-6 lg:p-8"
+        >
+          <div className="flex items-center gap-4">
+            <div className="rounded-full bg-brand-orange p-3">
+              <Award className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-brand-navy">Become a Top Rated Provider</h2>
+              <p className="text-sm text-slate-600">Complete more bookings and get 5 star reviews to unlock more benefits.</p>
+            </div>
+          </div>
+          <Link href="/become-provider">
+            <Button className="bg-brand-orange hover:bg-brand-orange/90 whitespace-nowrap">Know More</Button>
           </Link>
         </motion.div>
-        <div className="grid gap-6 sm:grid-cols-3 lg:col-span-1">
-          {[
-            { icon: TrendingUp, label: 'More Bookings' },
-            { icon: Wallet, label: 'More Earnings' },
-            { icon: BarChart3, label: 'Grow Your Business' },
-          ].map((item) => (
-            <div key={item.label} className="text-center">
-              <item.icon className="mx-auto h-8 w-8 text-brand-orange" />
-              <p className="mt-2 text-sm font-medium">{item.label}</p>
-            </div>
-          ))}
-        </div>
-        <div className="hidden justify-center lg:flex">
-          <div className="flex h-48 w-48 items-center justify-center rounded-full bg-white/10 text-8xl">👍</div>
-        </div>
       </div>
     </section>
   );
