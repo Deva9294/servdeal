@@ -5,7 +5,7 @@ import { catchAsync } from '../utils/catchAsync.js';
 import { signAccessToken, signRefreshToken } from '../utils/generateToken.js';
 import { generateOTP, saveOTP, verifyOTP } from '../services/otpService.js';
 import { sendSmsOtp } from '../services/smsService.js';
-import { sendEmailOtp, sendPasswordResetEmail } from '../services/emailService.js';
+import { sendEmailOtp as sendEmailOtpService, sendPasswordResetEmail } from '../services/emailService.js';
 import { normalizeIndianPhone } from '../utils/phone.js';
 
 const sendTokens = (user, res) => {
@@ -141,7 +141,7 @@ export const sendEmailOtp = catchAsync(async (req, res) => {
 
   let emailSent = false;
   try {
-    await sendEmailOtp(email, user.name, otp);
+    await sendEmailOtpService(email, user.name, otp);
     emailSent = true;
   } catch (err) {
     console.error('[Email OTP]', err.message);
@@ -179,7 +179,7 @@ export const resendEmailOtp = catchAsync(async (req, res) => {
 
   let emailSent = false;
   try {
-    await sendEmailOtp(email, user.name, otp);
+    await sendEmailOtpService(email, user.name, otp);
     emailSent = true;
   } catch (err) {
     console.error('[Resend Email OTP]', err.message);
