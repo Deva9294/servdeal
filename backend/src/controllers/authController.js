@@ -1,5 +1,7 @@
 import User from '../models/User.js';
 import Wallet from '../models/Wallet.js';
+import Provider from '../models/Provider.js';
+import ProviderProfile from '../models/ProviderProfile.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { signAccessToken, signRefreshToken } from '../utils/generateToken.js';
@@ -56,6 +58,20 @@ export const register = catchAsync(async (req, res) => {
     referralCode,
   });
   await Wallet.create({ user: user._id });
+
+  // Auto-create provider records for provider registrations
+  if (selectedRole === 'provider') {
+    await Provider.create({
+      user: user._id,
+      verificationStatus: 'pending',
+      city: '',
+    });
+    await ProviderProfile.create({
+      user: user._id,
+      overallStatus: 'incomplete',
+    });
+  }
+
   return sendTokens(user, res);
 });
 

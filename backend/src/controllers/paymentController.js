@@ -9,14 +9,13 @@ import {
   buildPayuPayload,
   verifyPayuResponseHash,
   isPayuConfigured,
+  isRazorpayConfigured,
+  createRazorpayOrder,
+  verifyRazorpaySignature,
 } from '../services/paymentService.js';
 
 export const createOrder = catchAsync(async (req, res) => {
-  if (!isPayuConfigured()) {
-    throw new AppError('PayU is not configured on server', 503);
-  }
-
-  const { bookingId, amount, purpose } = req.body;
+  const { bookingId, amount, purpose, gateway } = req.body;
   let booking;
   let payAmount = amount;
 
@@ -31,12 +30,17 @@ export const createOrder = catchAsync(async (req, res) => {
 
   if (!payAmount || payAmount < 1) throw new AppError('Invalid amount', 400);
 
+  const selectedGateway = gateway || (isPayuConfigured() ? 'payu' : isRazorpayConfigured() ? 'razorpay' : null);
+  if (!selectedGateway) {
+    throw new AppError('No payment gateway is configured on server', 503);
+  }
+
   const payment = await Payment.create({
     booking: booking?._id,
     user: req.user._id,
     amount: payAmount,
-    gateway: 'payu',
-    gatewayOrderId: `PAYU-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+    gateway: selectedGateway,
+    gatewayOrderId: `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     status: 'created',
     gst: booking?.gst || 0,
     invoiceNumber: `INV-${Date.now()}`,
@@ -45,6 +49,29 @@ export const createOrder = catchAsync(async (req, res) => {
       bookingId: booking?._id ? String(booking._id) : '',
     },
   });
+
+  if (selectedGateway === 'razorpay') {
+    const order = await createRazorpayOrder({
+      amount: payAmount,
+      receipt: payment.gatewayOrderId,
+    });
+    payment.gatewayOrderId = order.id;
+    await payment.save();
+
+    return res.json({
+      success: true,
+      gateway: 'razorpay',
+      paymentId: payment._id,
+      bookingId: booking?._id,
+      order,
+      key: process.env.RAZORPAY_KEY_ID,
+      prefill: {
+        name: req.user.name || 'Customer',
+        email: req.user.email || '',
+        contact: req.user.phone || '',
+      },
+    });
+  }
 
   const payuPayload = buildPayuPayload({
     amount: payAmount,
@@ -68,20 +95,38 @@ export const createOrder = catchAsync(async (req, res) => {
 });
 
 export const verifyPayment = catchAsync(async (req, res) => {
-  const valid = verifyPayuResponseHash(req.body);
-  if (!valid) throw new AppError('Payment verification failed — invalid signature', 400);
+  const { gateway } = req.body;
+  let payment;
 
-  const { txnid, mihpayid, status } = req.body;
+  if (gateway === 'razorpay') {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const valid = verifyRazorpaySignature({
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      signature: razorpay_signature,
+    });
+    if (!valid) throw new AppError('Razorpay verification failed — invalid signature', 400);
 
-  const payment = await Payment.findOneAndUpdate(
-    { gatewayOrderId: String(txnid) },
-    { status: status === 'success' ? 'paid' : 'failed', gatewayPaymentId: String(mihpayid) },
-    { new: true }
-  );
-  if (!payment) throw new AppError('Payment record not found', 404);
+    payment = await Payment.findOneAndUpdate(
+      { gatewayOrderId: String(razorpay_order_id) },
+      { status: 'paid', gatewayPaymentId: String(razorpay_payment_id) },
+      { new: true }
+    );
+    if (!payment) throw new AppError('Payment record not found', 404);
+  } else {
+    const valid = verifyPayuResponseHash(req.body);
+    if (!valid) throw new AppError('Payment verification failed — invalid signature', 400);
 
-  if (status !== 'success') {
-    return res.json({ success: false, status, payment });
+    const { txnid, mihpayid, status } = req.body;
+    payment = await Payment.findOneAndUpdate(
+      { gatewayOrderId: String(txnid) },
+      { status: status === 'success' ? 'paid' : 'failed', gatewayPaymentId: String(mihpayid) },
+      { new: true }
+    );
+    if (!payment) throw new AppError('Payment record not found', 404);
+    if (status !== 'success') {
+      return res.json({ success: false, status, payment });
+    }
   }
 
   if (payment.metadata?.purpose === 'wallet' || !payment.booking) {
@@ -91,7 +136,7 @@ export const verifyPayment = catchAsync(async (req, res) => {
     wallet.transactions.push({
       type: 'credit',
       amount: payment.amount,
-      description: 'PayU wallet top-up',
+      description: 'Wallet top-up',
     });
     await wallet.save();
     await User.findByIdAndUpdate(req.user._id, { walletBalance: wallet.balance });
@@ -106,7 +151,7 @@ export const verifyPayment = catchAsync(async (req, res) => {
   );
   if (!booking) throw new AppError('Booking not found', 404);
 
-  booking.timeline.push({ status: 'confirmed', note: 'Payment received via PayU' });
+  booking.timeline.push({ status: 'confirmed', note: 'Payment received' });
   await booking.save();
 
   await Notification.create({
@@ -205,6 +250,10 @@ export const getConfig = catchAsync(async (req, res) => {
       enabled: isPayuConfigured(),
       key: process.env.PAYU_KEY || null,
       env: process.env.PAYU_ENV || 'sandbox',
+    },
+    razorpay: {
+      enabled: isRazorpayConfigured(),
+      keyId: process.env.RAZORPAY_KEY_ID || null,
     },
   });
 });

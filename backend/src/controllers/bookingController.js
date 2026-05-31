@@ -6,6 +6,9 @@ import Notification from '../models/Notification.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
 import { calculateCommission } from '../services/paymentService.js';
+import { calculateDynamicPrice } from '../services/pricingService.js';
+import { autoAssignBooking } from '../services/assignmentService.js';
+import { detectFakeBooking } from '../services/trustService.js';
 import Wallet from '../models/Wallet.js';
 import User from '../models/User.js';
 
@@ -18,7 +21,30 @@ export const createBooking = catchAsync(async (req, res) => {
   }
   if (!service) throw new AppError('Service not found', 404);
 
-  const amount = req.body.amount || service.basePrice;
+  let amount = req.body.amount || service.basePrice;
+  let baseAmount = amount;
+  let surgeMultiplier = 1;
+  let dynamicPricingApplied = false;
+
+  if (req.body.address?.lat && req.body.address?.lng && req.body.useDynamicPricing !== false) {
+    try {
+      const pricing = await calculateDynamicPrice({
+        serviceId: service._id,
+        city: req.body.address?.city,
+        customerLat: req.body.address.lat,
+        customerLng: req.body.address.lng,
+        basePrice: amount,
+        isEmergency: req.body.isEmergency || false,
+      });
+      amount = pricing.finalAmount;
+      baseAmount = pricing.basePrice;
+      surgeMultiplier = pricing.surgeMultiplier;
+      dynamicPricingApplied = true;
+    } catch (err) {
+      console.error('Dynamic pricing error:', err.message);
+    }
+  }
+
   const { commission, providerEarning } = calculateCommission(amount);
 
   const paymentMethod = req.body.paymentMethod || 'payu';
@@ -48,9 +74,12 @@ export const createBooking = catchAsync(async (req, res) => {
     customer: req.user._id,
     service: service._id,
     packageName: req.body.packageName,
-    scheduledAt: req.body.scheduledAt,
+    scheduledAt: req.body.scheduledAt || new Date(),
     address: req.body.address,
     amount,
+    baseAmount,
+    surgeMultiplier,
+    dynamicPricingApplied,
     gst: req.body.gst || 0,
     discount: req.body.discount || 0,
     commission,
@@ -58,13 +87,22 @@ export const createBooking = catchAsync(async (req, res) => {
     paymentMethod,
     paymentStatus,
     status,
+    isEmergency: req.body.isEmergency || false,
+    assignmentRadiusKm: req.body.radius || 20,
     notes: req.body.notes,
     timeline: [{ status, note: 'Booking created' }],
   });
 
+  await detectFakeBooking(booking);
+
+  const io = req.app.get('io');
+  if (!req.body.providerId && req.body.autoAssign !== false) {
+    await autoAssignBooking(booking._id, io);
+  }
+
   await Notification.create({
     user: req.user._id,
-    title: 'Booking Created',
+    title: req.body.isEmergency ? 'Emergency Booking Created' : 'Booking Created',
     message: `Your booking ${booking.bookingId} has been placed.`,
     type: 'booking',
     link: `/dashboard/bookings/${booking._id}`,

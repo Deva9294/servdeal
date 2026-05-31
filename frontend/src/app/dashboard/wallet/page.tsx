@@ -5,8 +5,10 @@ import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { payWithPayU } from '@/lib/payu';
+import { payWithRazorpay } from '@/lib/razorpay';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
@@ -23,7 +25,6 @@ export default function WalletPage() {
     if (payment === 'success') {
       toast.success('Wallet topped up successfully!');
       qc.invalidateQueries({ queryKey: ['wallet'] });
-      // Clean URL
       if (typeof window !== 'undefined') {
         window.history.replaceState({}, '', window.location.pathname);
       }
@@ -35,7 +36,7 @@ export default function WalletPage() {
     }
   }, [searchParams, qc]);
 
-  const { data } = useQuery({
+  const { data: walletData } = useQuery({
     queryKey: ['wallet'],
     queryFn: async () => {
       const res = await api.get('/payments/wallet');
@@ -43,13 +44,32 @@ export default function WalletPage() {
     },
   });
 
-  const topUpPayU = async () => {
+  const { data: config } = useQuery({
+    queryKey: ['payment-config'],
+    queryFn: async () => {
+      const res = await api.get('/payments/config');
+      return res.data;
+    },
+  });
+
+  const payuEnabled = config?.payu?.enabled;
+  const razorpayEnabled = config?.razorpay?.enabled;
+  const anyGateway = payuEnabled || razorpayEnabled;
+  const gatewayName = payuEnabled ? 'PayU' : razorpayEnabled ? 'Razorpay' : 'None';
+
+  const handleTopUp = async () => {
     const amt = Number(amount);
     if (!amt || amt < 1) return toast.error('Enter valid amount');
+    if (!anyGateway) return toast.error('No payment gateway is configured. Contact support.');
     setLoading(true);
     try {
-      await payWithPayU({ amount: amt, purpose: 'wallet', description: 'Wallet top-up' });
-      toast.success('Redirecting to PayU for payment...');
+      if (razorpayEnabled) {
+        await payWithRazorpay({ amount: amt, purpose: 'wallet', description: 'Wallet top-up' });
+        toast.success('Payment successful!');
+      } else {
+        await payWithPayU({ amount: amt, purpose: 'wallet', description: 'Wallet top-up' });
+        toast.success('Redirecting to PayU for payment...');
+      }
       qc.invalidateQueries({ queryKey: ['wallet'] });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Payment failed';
@@ -61,27 +81,42 @@ export default function WalletPage() {
 
   return (
     <div className="mx-auto max-w-xl space-y-6">
-      <PageHeader title="My Wallet" description="Add money via PayU (UPI / Card)" />
+      <PageHeader title="My Wallet" description={`Add money via ${gatewayName} (UPI / Card)`} />
       <Card className="bg-gradient-to-br from-brand-navy to-blue-900 p-8 text-white">
         <p className="text-white/70">Available Balance</p>
-        <p className="mt-2 text-4xl font-bold">{formatCurrency(data?.balance || 0)}</p>
+        <p className="mt-2 text-4xl font-bold">{formatCurrency(walletData?.balance || 0)}</p>
       </Card>
       <Card className="p-5 space-y-4">
-        <h3 className="font-semibold">Add Money (PayU)</h3>
-        <div className="flex gap-2">
-          {['500', '1000', '2000'].map((a) => (
-            <button key={a} onClick={() => setAmount(a)} className={`rounded-lg border px-4 py-2 text-sm ${amount === a ? 'border-brand-orange bg-orange-50' : ''}`}>₹{a}</button>
-          ))}
-        </div>
-        <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} />
-        <Button className="w-full" onClick={topUpPayU} disabled={loading}>
-          {loading ? 'Opening PayU...' : `Pay ${formatCurrency(Number(amount) || 0)}`}
-        </Button>
+        <h3 className="font-semibold">Add Money ({gatewayName})</h3>
+        {!config && (
+          <div className="space-y-2">
+            <Skeleton className="h-8" />
+            <Skeleton className="h-10" />
+          </div>
+        )}
+        {config && !anyGateway && (
+          <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">
+            Payment gateway is not configured. Please contact support to add money.
+          </div>
+        )}
+        {anyGateway && (
+          <>
+            <div className="flex gap-2">
+              {['500', '1000', '2000'].map((a) => (
+                <button key={a} onClick={() => setAmount(a)} className={`rounded-lg border px-4 py-2 text-sm ${amount === a ? 'border-brand-orange bg-orange-50' : ''}`}>₹{a}</button>
+              ))}
+            </div>
+            <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} min={1} />
+            <Button className="w-full" onClick={handleTopUp} disabled={loading}>
+              {loading ? 'Processing...' : `Pay ${formatCurrency(Number(amount) || 0)}`}
+            </Button>
+          </>
+        )}
       </Card>
       <Card className="p-5">
         <h3 className="font-semibold mb-4">Transactions</h3>
         <div className="space-y-3">
-          {(data?.transactions || []).map((t: { type: string; amount: number; description: string; createdAt: string }, i: number) => (
+          {(walletData?.transactions || []).map((t: { type: string; amount: number; description: string; createdAt: string }, i: number) => (
             <div key={i} className="flex justify-between border-b pb-3 text-sm">
               <div>
                 <p className="font-medium">{t.description}</p>
@@ -92,7 +127,7 @@ export default function WalletPage() {
               </span>
             </div>
           ))}
-          {!data?.transactions?.length && <p className="text-sm text-slate-500">No transactions yet</p>}
+          {!walletData?.transactions?.length && <p className="text-sm text-slate-500">No transactions yet</p>}
         </div>
       </Card>
     </div>

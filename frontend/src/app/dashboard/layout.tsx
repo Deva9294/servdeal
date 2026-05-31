@@ -2,12 +2,12 @@
 
 import {
   LayoutDashboard, Calendar, Wallet, MapPin, Star, Tag, Bell, HelpCircle, Settings, Gift, MessageCircle, LogOut,
-  Wrench, GraduationCap,
+  Wrench, GraduationCap, Navigation,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Bell as BellIcon, MapPin as LocIcon } from 'lucide-react';
 import { BRAND } from '@/lib/constants';
 import { MobileNav } from '@/components/dashboard/MobileNav';
@@ -34,6 +34,45 @@ export default function CustomerDashboardLayout({ children }: { children: React.
   const router = useRouter();
   const { user, logout, isLoggedIn, isInitializing } = useAuth();
   useIdleTimer();
+  const [liveCity, setLiveCity] = useState<string>(BRAND.defaultCity);
+  const [locating, setLocating] = useState(false);
+
+  const fetchCity = useCallback(() => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=10`,
+            { headers: { 'Accept-Language': 'en' } }
+          );
+          const data = await res.json();
+          const city =
+            data?.address?.city ||
+            data?.address?.town ||
+            data?.address?.village ||
+            data?.address?.county ||
+            data?.address?.state ||
+            BRAND.defaultCity;
+          setLiveCity(city);
+        } catch {
+          setLiveCity(BRAND.defaultCity);
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => {
+        setLiveCity(BRAND.defaultCity);
+        setLocating(false);
+      },
+      { timeout: 8000 }
+    );
+  }, []);
+
+  useEffect(() => {
+    fetchCity();
+  }, [fetchCity]);
 
   useEffect(() => {
     if (!isInitializing && !isLoggedIn) router.replace('/login?redirect=/dashboard');
@@ -49,9 +88,17 @@ export default function CustomerDashboardLayout({ children }: { children: React.
       <DashboardSidebar items={navItems} />
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b bg-white px-6 py-4">
-          <button className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm">
-            <LocIcon className="h-4 w-4 text-brand-orange" />
-            {BRAND.defaultCity}
+          <button
+            onClick={fetchCity}
+            className="flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm"
+            title="Click to refresh location"
+          >
+            {locating ? (
+              <Navigation className="h-4 w-4 animate-spin text-brand-orange" />
+            ) : (
+              <LocIcon className="h-4 w-4 text-brand-orange" />
+            )}
+            <span className="max-w-[120px] truncate">{liveCity}</span>
           </button>
           <div className="flex items-center gap-4">
             <button className="relative"><BellIcon className="h-5 w-5" /></button>

@@ -9,7 +9,7 @@ export const getDashboardStats = catchAsync(async (req, res) => {
   const [totalUsers, totalProviders, totalBookings, payments, pendingBookings, pendingVerifications] =
     await Promise.all([
       User.countDocuments({ role: 'customer' }),
-      Provider.countDocuments(),
+      User.countDocuments({ role: 'provider' }),
       Booking.countDocuments(),
       Payment.aggregate([{ $match: { status: 'paid' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
       Booking.countDocuments({ status: 'pending' }),
@@ -54,7 +54,7 @@ export const getDashboardStats = catchAsync(async (req, res) => {
       topProviders,
       userStats: {
         customers: await User.countDocuments({ role: 'customer', isBlocked: false }),
-        providers: await User.countDocuments({ role: 'provider' }),
+        providers: totalProviders,
         blocked: await User.countDocuments({ isBlocked: true }),
       },
       bookingStats: {
@@ -78,11 +78,23 @@ export const updateUser = catchAsync(async (req, res) => {
 });
 
 export const approveProvider = catchAsync(async (req, res) => {
-  const provider = await Provider.findByIdAndUpdate(
-    req.params.id,
-    { verificationStatus: 'approved' },
-    { new: true }
-  ).populate('user', 'name email');
+  let provider = await Provider.findById(req.params.id);
+  if (provider) {
+    provider.verificationStatus = 'approved';
+    await provider.save();
+  } else {
+    // Try to find by user id or create new Provider document
+    const userProvider = await User.findById(req.params.id);
+    if (userProvider) {
+      provider = await Provider.create({
+        user: userProvider._id,
+        verificationStatus: 'approved',
+        city: userProvider.city || '',
+      });
+    }
+  }
+  if (!provider) throw new AppError('Provider not found', 404);
+  await provider.populate('user', 'name email');
   res.json({ success: true, data: provider });
 });
 

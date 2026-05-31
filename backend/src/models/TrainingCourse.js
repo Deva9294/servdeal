@@ -32,7 +32,7 @@ const trainingCourseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-trainingCourseSchema.index({ slug: 1 });
+// slug index auto-created by unique: true
 trainingCourseSchema.index({ category: 1, level: 1 });
 trainingCourseSchema.index({ isActive: 1 });
 

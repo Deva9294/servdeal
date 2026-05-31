@@ -4,18 +4,28 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/brand/Logo';
 import { cn } from '@/lib/utils';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon, Star } from 'lucide-react';
 
 export type NavItem = { href: string; label: string; icon: LucideIcon; badge?: number };
+
+export type SidebarProfile = {
+  name?: string;
+  role?: string;
+  avatar?: string;
+  rating?: number;
+  isOnline?: boolean;
+};
 
 export function DashboardSidebar({
   items,
   title,
   dark = false,
+  profile,
 }: {
   items: NavItem[];
   title?: string;
   dark?: boolean;
+  profile?: SidebarProfile;
 }) {
   const pathname = usePathname();
 
@@ -30,7 +40,43 @@ export function DashboardSidebar({
         <Logo monochrome={dark} />
         {title && <p className="mt-2 text-xs text-white/60">{title}</p>}
       </div>
-      <nav className="flex-1 space-y-1 px-3">
+
+      {profile && (
+        <div className="px-4 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              {profile.avatar ? (
+                <img src={profile.avatar} alt={profile.name} className="h-12 w-12 rounded-full object-cover" />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-orange text-white font-bold text-lg">
+                  {(profile.name || 'U').charAt(0).toUpperCase()}
+                </div>
+              )}
+              {profile.isOnline !== undefined && (
+                <span
+                  className={cn(
+                    'absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2',
+                    dark ? 'border-brand-navy' : 'border-white',
+                    profile.isOnline ? 'bg-green-500' : 'bg-slate-400'
+                  )}
+                />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-sm truncate">{profile.name || 'User'}</p>
+              {profile.role && <p className="text-xs text-slate-400 truncate">{profile.role}</p>}
+              {profile.rating !== undefined && profile.rating > 0 && (
+                <div className="flex items-center gap-1 mt-0.5">
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                  <span className="text-xs">{profile.rating.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <nav className="flex-1 space-y-1 px-3 overflow-y-auto">
         {items.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/');
           return (

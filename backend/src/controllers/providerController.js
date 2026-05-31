@@ -50,17 +50,34 @@ export const toggleOnline = catchAsync(async (req, res) => {
 
 export const getNearbyProviders = catchAsync(async (req, res) => {
   const { lat, lng, radius = 10 } = req.query;
-  const providers = await Provider.find({
-    verificationStatus: 'approved',
-    isOnline: true,
-    currentLocation: {
-      $near: {
-        $geometry: { type: 'Point', coordinates: [Number(lng), Number(lat)] },
-        $maxDistance: Number(radius) * 1000,
+  const hasCoords = lat && lng && !isNaN(Number(lat)) && !isNaN(Number(lng));
+
+  let providers = [];
+
+  if (hasCoords) {
+    // Geospatial query for providers with location
+    const nearby = await Provider.find({
+      verificationStatus: 'approved',
+      currentLocation: {
+        $near: {
+          $geometry: { type: 'Point', coordinates: [Number(lng), Number(lat)] },
+          $maxDistance: Number(radius) * 1000,
+        },
       },
-    },
-  })
-    .populate('user', 'name avatar')
-    .limit(20);
+    })
+      .populate('user', 'name avatar')
+      .limit(20);
+    providers = nearby;
+  }
+
+  // Fallback: also include approved providers without exact coordinates or if no coords provided
+  if (providers.length === 0) {
+    const fallback = await Provider.find({ verificationStatus: 'approved' })
+      .populate('user', 'name avatar')
+      .sort('-rating')
+      .limit(20);
+    providers = fallback;
+  }
+
   res.json({ success: true, data: providers });
 });

@@ -45,12 +45,23 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="flex min-h-screen bg-slate-50">
-      <DashboardSidebar items={navItems} dark title="FIXING PROBLEMS, DELIVERING TRUST" />
+      <DashboardSidebar
+        items={navItems}
+        dark
+        title="FIXING PROBLEMS, DELIVERING TRUST"
+        profile={{
+          name: displayName,
+          role: 'Service Provider',
+          avatar: user?.avatar,
+          rating: 4.8,
+          isOnline: true,
+        }}
+      />
       <div className="flex flex-1 flex-col">
         <header className="flex items-center justify-between border-b bg-white px-6 py-4">
           <div>
             <h1 className="text-xl font-bold text-brand-navy">Provider Panel</h1>
-            <p className="text-sm text-slate-500">Welcome, {displayName}</p>
+            <p className="text-sm text-slate-500">Welcome back, {displayName}</p>
           </div>
           <div className="flex items-center gap-3">
             <button className="relative rounded-lg p-2 hover:bg-slate-100">

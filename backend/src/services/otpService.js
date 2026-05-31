@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import BookingOTP from '../models/BookingOTP.js';
 
 export const generateOTP = () =>
   Math.floor(100000 + Math.random() * 900000).toString();
@@ -17,5 +18,47 @@ export const verifyOTP = async (user, otp) => {
   user.otpExpires = undefined;
   user.isVerified = true;
   await user.save();
+  return true;
+};
+
+export const generateBookingStartOTP = async (bookingId) => {
+  const otp = generateOTP();
+  const expires = new Date(Date.now() + 30 * 60 * 1000);
+  await BookingOTP.findOneAndUpdate(
+    { booking: bookingId },
+    { booking: bookingId, startOTP: otp, startOTPExpires: expires, startOTPVerified: false },
+    { upsert: true, new: true }
+  );
+  return otp;
+};
+
+export const verifyBookingStartOTP = async (bookingId, otp) => {
+  const record = await BookingOTP.findOne({ booking: bookingId });
+  if (!record || !record.startOTP || record.startOTPExpires < new Date()) return false;
+  if (record.startOTP !== otp) return false;
+  record.startOTPVerified = true;
+  record.startOTPVerifiedAt = new Date();
+  await record.save();
+  return true;
+};
+
+export const generateBookingCompleteOTP = async (bookingId) => {
+  const otp = generateOTP();
+  const expires = new Date(Date.now() + 60 * 60 * 1000);
+  await BookingOTP.findOneAndUpdate(
+    { booking: bookingId },
+    { completeOTP: otp, completeOTPExpires: expires, completeOTPVerified: false },
+    { upsert: true, new: true }
+  );
+  return otp;
+};
+
+export const verifyBookingCompleteOTP = async (bookingId, otp) => {
+  const record = await BookingOTP.findOne({ booking: bookingId });
+  if (!record || !record.completeOTP || record.completeOTPExpires < new Date()) return false;
+  if (record.completeOTP !== otp) return false;
+  record.completeOTPVerified = true;
+  record.completeOTPVerifiedAt = new Date();
+  await record.save();
   return true;
 };

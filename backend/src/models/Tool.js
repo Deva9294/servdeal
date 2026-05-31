@@ -29,9 +29,9 @@ const toolSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// slug index auto-created by unique: true
 toolSchema.index({ owner: 1 });
 toolSchema.index({ category: 1, isAvailable: 1 });
-toolSchema.index({ slug: 1 });
 toolSchema.index({ 'location.city': 1 });
 
 export default mongoose.model('Tool', toolSchema);

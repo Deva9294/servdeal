@@ -46,23 +46,35 @@ export function HeroSection() {
           <div className="mt-8 flex flex-wrap gap-6 text-sm text-slate-600">
             <span className="flex items-center gap-2"><Users className="h-5 w-5 text-brand-orange" /> 10,000+ Happy Customers</span>
             <span className="flex items-center gap-2"><Star className="h-5 w-5 text-brand-orange" /> 4.8 Average Rating</span>
-            <span className="flex items-center gap-2"><Shield className="h-5 w-5 text-brand-orange" /> 100% Verified Professionals</span>
+            <span className="flex items-center gap-2"><Shield className="h-5 w-5 text-brand-orange" /> 1000+ Active Professionals</span>
           </div>
         </motion.div>
 
-        {/* Right Side - Floating Service Cards */}
+        {/* Right Side - Service Worker Image */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.7, delay: 0.2 }}
-          className="relative flex justify-center"
+          className="relative hidden lg:flex justify-center items-center"
         >
           <div className="relative">
             {/* Background circle */}
             <div className="absolute inset-0 -z-10 mx-auto h-80 w-80 rounded-full bg-gradient-to-br from-orange-100/60 to-blue-100/60 blur-2xl lg:h-96 lg:w-96" />
 
-            {/* Floating cards grid */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {/* Service Worker Image */}
+            <img
+              src="https://images.unsplash.com/photo-1621905251189-08b45d6e691e?w=500&h=500&fit=crop&crop=faces"
+              alt="Service Professional"
+              className="relative z-10 h-80 w-auto rounded-2xl object-cover shadow-xl"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-hero');
+                if (fallback) (fallback as HTMLElement).style.display = 'grid';
+              }}
+            />
+
+            {/* Fallback floating cards */}
+            <div className="fallback-hero hidden grid-cols-2 gap-3 sm:grid-cols-3">
               {serviceCards.map((card) => (
                 <motion.div
                   key={card.label}
@@ -82,7 +94,7 @@ export function HeroSection() {
             <motion.div
               animate={{ y: [0, -10, 0] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-              className="absolute -right-4 -top-4 flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg"
+              className="absolute -right-4 top-4 z-20 flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg"
             >
               <BadgeCheck className="h-5 w-5 text-green-500" />
               <span className="text-xs font-semibold text-brand-navy">Verified Pro</span>
@@ -92,7 +104,7 @@ export function HeroSection() {
             <motion.div
               animate={{ y: [0, 10, 0] }}
               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-              className="absolute -bottom-4 -left-4 flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg"
+              className="absolute -bottom-4 left-4 z-20 flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-lg"
             >
               <Star className="h-5 w-5 fill-brand-orange text-brand-orange" />
               <span className="text-xs font-semibold text-brand-navy">4.8 Rating</span>

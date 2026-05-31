@@ -23,7 +23,6 @@ const workerCardSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-workerCardSchema.index({ cardId: 1 });
-workerCardSchema.index({ worker: 1 });
+// Indexes auto-created by unique: true on worker and cardId fields
 
 export default mongoose.model('WorkerCard', workerCardSchema);

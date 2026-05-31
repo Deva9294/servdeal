@@ -1,13 +1,28 @@
 import crypto from 'crypto';
 import Stripe from 'stripe';
+import Razorpay from 'razorpay';
 
 let stripe;
+let razorpay;
 
 export const getStripe = () => {
   if (!stripe && process.env.STRIPE_SECRET_KEY) {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   }
   return stripe;
+};
+
+export const isRazorpayConfigured = () =>
+  Boolean(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET);
+
+export const getRazorpay = () => {
+  if (!razorpay && isRazorpayConfigured()) {
+    razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+  return razorpay;
 };
 
 const PAYU_ACTION_URL =
@@ -152,6 +167,32 @@ export const verifyPayuResponseHash = (data) => {
 
   const expected = crypto.createHash('sha512').update(values.join('|')).digest('hex');
   return expected === String(hash);
+};
+
+export const createRazorpayOrder = async ({ amount, receipt }) => {
+  const rzp = getRazorpay();
+  if (!rzp) throw new Error('Razorpay is not configured');
+  const order = await rzp.orders.create({
+    amount: Math.round(amount * 100),
+    currency: 'INR',
+    receipt,
+  });
+  return order;
+};
+
+export const verifyRazorpaySignature = ({
+  orderId,
+  paymentId,
+  signature,
+}) => {
+  const secret = process.env.RAZORPAY_KEY_SECRET;
+  if (!secret) return false;
+  const body = `${orderId}|${paymentId}`;
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(body)
+    .digest('hex');
+  return expected === signature;
 };
 
 export const calculateCommission = (amount) => {

@@ -6,6 +6,23 @@ const documentSchema = new mongoose.Schema({
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
 });
 
+const portfolioSchema = new mongoose.Schema({
+  title: String,
+  description: String,
+  mediaUrl: String,
+  mediaType: { type: String, enum: ['image', 'video'], default: 'image' },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const certificateSchema = new mongoose.Schema({
+  title: String,
+  issuer: String,
+  url: String,
+  verified: { type: Boolean, default: false },
+  verifiedAt: Date,
+  createdAt: { type: Date, default: Date.now },
+});
+
 const providerSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
@@ -22,6 +39,7 @@ const providerSchema = new mongoose.Schema(
       default: 'pending',
     },
     isOnline: { type: Boolean, default: false },
+    lastOnlineAt: Date,
     availability: {
       monday: { enabled: Boolean, slots: [String] },
       tuesday: { enabled: Boolean, slots: [String] },
@@ -44,8 +62,25 @@ const providerSchema = new mongoose.Schema(
     },
     totalEarnings: { type: Number, default: 0 },
     pendingPayout: { type: Number, default: 0 },
+    walletBalance: { type: Number, default: 0 },
     completedJobs: { type: Number, default: 0 },
+    cancelledJobs: { type: Number, default: 0 },
+    totalJobRequests: { type: Number, default: 0 },
+    acceptedJobs: { type: Number, default: 0 },
+    avgResponseTimeMinutes: { type: Number, default: 0 },
+    customerSatisfactionScore: { type: Number, default: 0 },
     city: String,
+    portfolio: [portfolioSchema],
+    certificates: [certificateSchema],
+    skills: [String],
+    badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
+    isFeatured: { type: Boolean, default: false },
+    subscriptionStatus: {
+      type: String,
+      enum: ['none', 'active', 'expired'],
+      default: 'none',
+    },
+    subscriptionExpiresAt: Date,
     enabledServices: [
       {
         service: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },

@@ -135,10 +135,20 @@ export default function CustomerDashboard() {
             </div>
             <div className="hidden lg:flex items-center justify-center">
               <div className="relative">
-                <div className="h-24 w-24 rounded-full bg-brand-orange/20 flex items-center justify-center">
-                  <Wrench className="h-10 w-10 text-brand-orange" />
+                <img
+                  src="https://images.unsplash.com/photo-1621905251189-08b45d6e691e?w=320&h=320&fit=crop&crop=faces"
+                  alt="Service Professional"
+                  className="h-32 w-32 rounded-2xl object-cover shadow-lg"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback');
+                    if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                  }}
+                />
+                <div className="fallback hidden h-32 w-32 rounded-2xl bg-brand-orange/10 items-center justify-center">
+                  <Wrench className="h-12 w-12 text-brand-orange" />
                 </div>
-                <div className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded-full">Verified</div>
+                <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium shadow-sm">Verified</div>
               </div>
             </div>
           </div>

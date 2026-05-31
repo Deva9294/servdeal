@@ -95,8 +95,7 @@ const providerProfileSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
-// Indexes
-providerProfileSchema.index({ user: 1 });
+// Indexes (user index auto-created by unique: true)
 providerProfileSchema.index({ overallStatus: 1 });
 providerProfileSchema.index({ 'skills.name': 1 });
 

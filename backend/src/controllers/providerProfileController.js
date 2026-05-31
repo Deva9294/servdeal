@@ -1,4 +1,5 @@
 import ProviderProfile from '../models/ProviderProfile.js';
+import Provider from '../models/Provider.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
@@ -195,6 +196,20 @@ export const verifyProvider = catchAsync(async (req, res) => {
   );
 
   if (!profile) throw new AppError('Provider not found', 404);
+
+  // Sync Provider model verification status and create if missing
+  const providerDoc = await Provider.findOne({ user: profile.user });
+  if (providerDoc) {
+    providerDoc.verificationStatus = status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : providerDoc.verificationStatus;
+    await providerDoc.save();
+  } else if (status === 'approved') {
+    // Auto-create Provider document if missing
+    await Provider.create({
+      user: profile.user,
+      verificationStatus: 'approved',
+      city: '',
+    });
+  }
 
   // Notify provider
   const title = status === 'approved' ? 'Profile Verified' : status === 'rejected' ? 'Verification Rejected' : 'Profile Status Updated';

@@ -18,7 +18,7 @@ const badgeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-badgeSchema.index({ slug: 1 });
+// slug index auto-created by unique: true
 badgeSchema.index({ category: 1 });
 
 export default mongoose.model('Badge', badgeSchema);

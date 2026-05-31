@@ -27,6 +27,7 @@ import trainingRoutes from './trainingRoutes.js';
 import toolRoutes from './toolRoutes.js';
 import referralRoutes from './referralRoutes.js';
 import matchingRoutes from './matchingRoutes.js';
+import enterpriseRoutes from './enterpriseRoutes.js';
 
 const router = Router();
 
@@ -62,6 +63,7 @@ router.use('/training', trainingRoutes);
 router.use('/tools', toolRoutes);
 router.use('/referrals', referralRoutes);
 router.use('/matching', matchingRoutes);
+router.use('/enterprise', enterpriseRoutes);
 
 router.get('/health', (req, res) => {
   res.json({ success: true, message: 'ServDeal API is running' });
