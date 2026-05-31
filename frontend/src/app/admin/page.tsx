@@ -8,7 +8,7 @@ import api from '@/lib/api';
 import {
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Users, Wrench, Calendar, DollarSign, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { Users, Wrench, Calendar, DollarSign, Clock, TrendingUp, TrendingDown, ShieldCheck } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const COLORS = ['#ff7a00', '#0b1f4d', '#94a3b8', '#22c55e'];
@@ -46,6 +46,7 @@ export default function AdminDashboard() {
     { label: 'Total Bookings', value: stats.totalBookings?.toLocaleString('en-IN'), trend: '+20.8%', up: true, icon: Calendar, color: 'bg-purple-100 text-purple-600' },
     { label: 'Total Earnings', value: formatCurrency(stats.totalEarnings || 0), trend: '+22.5%', up: true, icon: DollarSign, color: 'bg-orange-100 text-orange-600' },
     { label: 'Pending Bookings', value: stats.pendingBookings, trend: '-8.4%', up: false, icon: Clock, color: 'bg-red-100 text-red-600' },
+    { label: 'Pending Verifications', value: stats.pendingVerifications || 0, trend: null, up: null, icon: ShieldCheck, color: 'bg-amber-100 text-amber-600' },
   ];
 
   const userPie = [
@@ -63,15 +64,17 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {statCards.map((s) => (
           <Card key={s.label} className="p-5">
             <div className="flex justify-between">
               <div className={`rounded-xl p-2 ${s.color}`}><s.icon className="h-5 w-5" /></div>
-              <span className={`flex items-center gap-1 text-xs ${s.up ? 'text-green-600' : 'text-red-600'}`}>
-                {s.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                {s.trend}
-              </span>
+              {s.trend !== null && (
+                <span className={`flex items-center gap-1 text-xs ${s.up ? 'text-green-600' : 'text-red-600'}`}>
+                  {s.up ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                  {s.trend}
+                </span>
+              )}
             </div>
             <p className="mt-3 text-2xl font-bold">{s.value}</p>
             <p className="text-sm text-slate-500">{s.label}</p>

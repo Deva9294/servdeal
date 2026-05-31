@@ -1,17 +1,19 @@
 import User from '../models/User.js';
 import Provider from '../models/Provider.js';
+import ProviderProfile from '../models/ProviderProfile.js';
 import Booking from '../models/Booking.js';
 import Payment from '../models/Payment.js';
 import { catchAsync } from '../utils/catchAsync.js';
 
 export const getDashboardStats = catchAsync(async (req, res) => {
-  const [totalUsers, totalProviders, totalBookings, payments, pendingBookings] =
+  const [totalUsers, totalProviders, totalBookings, payments, pendingBookings, pendingVerifications] =
     await Promise.all([
       User.countDocuments({ role: 'customer' }),
       Provider.countDocuments(),
       Booking.countDocuments(),
       Payment.aggregate([{ $match: { status: 'paid' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
       Booking.countDocuments({ status: 'pending' }),
+      ProviderProfile.countDocuments({ overallStatus: 'pending_approval' }),
     ]);
 
   const completed = await Booking.countDocuments({ status: 'completed' });
@@ -45,6 +47,7 @@ export const getDashboardStats = catchAsync(async (req, res) => {
       totalBookings,
       totalEarnings: payments[0]?.total || 0,
       pendingBookings,
+      pendingVerifications,
       completed,
       cancelled,
       monthlyBookings,

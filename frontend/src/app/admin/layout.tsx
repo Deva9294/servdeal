@@ -9,8 +9,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Search, Bell as BellIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 
-const navItems = [
+const baseNavItems = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/providers', label: 'Providers', icon: Wrench },
@@ -26,6 +28,22 @@ const navItems = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, logout, isLoggedIn } = useAuth();
+
+  const { data: stats } = useQuery({
+    queryKey: ['admin-sidebar-stats'],
+    queryFn: async () => {
+      const res = await api.get('/admin/dashboard');
+      return res.data.data;
+    },
+    staleTime: 60000,
+  });
+
+  const pendingVerifications = stats?.pendingVerifications || 0;
+  const navItems = baseNavItems.map((item) =>
+    item.href === '/admin/providers' && pendingVerifications > 0
+      ? { ...item, badge: pendingVerifications }
+      : item
+  );
 
   useEffect(() => {
     if (!isLoggedIn) router.replace('/login?redirect=/admin');

@@ -1,5 +1,6 @@
 import ProviderProfile from '../models/ProviderProfile.js';
 import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
@@ -9,20 +10,35 @@ export const upsertProfile = catchAsync(async (req, res) => {
   const userId = req.user._id;
   let profile = await ProviderProfile.findOne({ user: userId });
 
+  const { requestVerification, ...restBody } = req.body;
   const updateData = {
-    ...req.body,
+    ...restBody,
     user: userId,
-    kycStatus: 'submitted',
-    overallStatus: 'pending_approval',
   };
 
+  // Only set verification status when explicitly requested
+  if (requestVerification) {
+    updateData.kycStatus = 'submitted';
+    updateData.overallStatus = 'pending_approval';
+  }
+
   if (profile) {
+    // Preserve existing status unless requesting verification
+    if (!requestVerification) {
+      delete updateData.overallStatus;
+      delete updateData.kycStatus;
+    }
     profile = await ProviderProfile.findOneAndUpdate(
       { user: userId },
       { $set: updateData },
       { new: true, runValidators: true }
     );
   } else {
+    // New profile defaults to incomplete unless requesting verification
+    if (!requestVerification) {
+      updateData.kycStatus = 'pending';
+      updateData.overallStatus = 'incomplete';
+    }
     profile = await ProviderProfile.create(updateData);
   }
 
@@ -33,7 +49,7 @@ export const upsertProfile = catchAsync(async (req, res) => {
     await user.save();
   }
 
-  res.json({ success: true, message: 'Profile saved for review', profile });
+  res.json({ success: true, message: requestVerification ? 'Profile submitted for review' : 'Profile saved', profile });
 });
 
 // Get my provider profile
@@ -123,12 +139,16 @@ export const listProviders = catchAsync(async (req, res) => {
   const { status, search, page = 1, limit = 20 } = req.query;
   const filter = {};
   if (status) filter.overallStatus = status;
+
   if (search) {
-    filter.$or = [
-      { 'user.name': { $regex: search, $options: 'i' } },
-      { 'user.email': { $regex: search, $options: 'i' } },
-      { 'user.phone': { $regex: search, $options: 'i' } },
-    ];
+    const matchedUsers = await User.find({
+      $or: [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+      ],
+    }).select('_id');
+    filter.user = { $in: matchedUsers.map((u) => u._id) };
   }
 
   const profiles = await ProviderProfile.find(filter)
@@ -175,6 +195,28 @@ export const verifyProvider = catchAsync(async (req, res) => {
   );
 
   if (!profile) throw new AppError('Provider not found', 404);
+
+  // Notify provider
+  const title = status === 'approved' ? 'Profile Verified' : status === 'rejected' ? 'Verification Rejected' : 'Profile Status Updated';
+  const message = status === 'approved'
+    ? 'Your profile has been verified. You can now start accepting bookings.'
+    : status === 'rejected'
+      ? `Your verification was rejected. Reason: ${rejectionReason || 'No reason provided.'}`
+      : `Your profile status is now ${status}.`;
+
+  await Notification.create({
+    user: profile.user,
+    title,
+    message,
+    type: 'system',
+    link: '/provider/profile',
+  });
+
+  const io = req.app.get('io');
+  if (io) {
+    io.to(`user:${profile.user}`).emit('notification', { title, message });
+  }
+
   res.json({ success: true, message: `Provider ${status}`, profile });
 });
 

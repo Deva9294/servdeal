@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Star, CheckCircle, FileText } from 'lucide-react';
+import { Star, CheckCircle, FileText, ShieldCheck, ShieldX, Clock, Send } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -25,6 +25,7 @@ export default function ProviderProfilePage() {
   const [profile, setProfile] = useState<ProviderProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [bio, setBio] = useState('');
   const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
@@ -75,11 +76,26 @@ export default function ProviderProfilePage() {
     try {
       await api.post('/providers/profile', { bio });
       toast.success('Profile saved');
+      await fetchProfile();
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       toast.error(msg || 'Save failed');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const submitForVerification = async () => {
+    setSubmitting(true);
+    try {
+      await api.post('/providers/profile', { bio, requestVerification: true });
+      toast.success('Verification request submitted!');
+      await fetchProfile();
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(msg || 'Submission failed');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -109,6 +125,11 @@ export default function ProviderProfilePage() {
           <Badge status="active" className="absolute -bottom-1 left-1/2 -translate-x-1/2">
             {profile?.isAvailable ? 'Online' : 'Offline'}
           </Badge>
+          <div className="absolute -right-2 -top-2">
+            {profile?.overallStatus === 'approved' && <ShieldCheck className="h-5 w-5 text-green-500" />}
+            {profile?.overallStatus === 'pending_approval' && <Clock className="h-5 w-5 text-amber-500" />}
+            {profile?.overallStatus === 'rejected' && <ShieldX className="h-5 w-5 text-red-500" />}
+          </div>
         </div>
         <div>
           <h2 className="text-xl font-bold">{user?.name || 'Provider'}</h2>
@@ -165,6 +186,61 @@ export default function ProviderProfilePage() {
             </div>
           ))}
         </div>
+      </Card>
+
+      <Card className="p-6">
+        <h3 className="font-semibold">Verification Status</h3>
+        <div className="mt-4 flex items-center gap-3">
+          {profile?.overallStatus === 'approved' && (
+            <>
+              <ShieldCheck className="h-6 w-6 text-green-500" />
+              <div>
+                <p className="font-medium text-green-600">Verified</p>
+                <p className="text-xs text-slate-500">Your profile is approved and visible to customers.</p>
+              </div>
+            </>
+          )}
+          {profile?.overallStatus === 'pending_approval' && (
+            <>
+              <Clock className="h-6 w-6 text-amber-500" />
+              <div>
+                <p className="font-medium text-amber-600">Pending Review</p>
+                <p className="text-xs text-slate-500">Your profile is under admin review. Please wait.</p>
+              </div>
+            </>
+          )}
+          {profile?.overallStatus === 'rejected' && (
+            <>
+              <ShieldX className="h-6 w-6 text-red-500" />
+              <div>
+                <p className="font-medium text-red-600">Rejected</p>
+                <p className="text-xs text-slate-500">Your verification was rejected. Update documents and resubmit.</p>
+              </div>
+            </>
+          )}
+          {(!profile?.overallStatus || profile?.overallStatus === 'incomplete') && (
+            <>
+              <FileText className="h-6 w-6 text-slate-400" />
+              <div>
+                <p className="font-medium text-slate-600">Incomplete</p>
+                <p className="text-xs text-slate-500">Upload required documents and submit for verification.</p>
+              </div>
+            </>
+          )}
+        </div>
+        {profile?.overallStatus !== 'approved' && profile?.overallStatus !== 'pending_approval' && (
+          <Button
+            className="mt-4 gap-1"
+            disabled={submitting || !hasAadhaar || !hasPan}
+            onClick={submitForVerification}
+          >
+            <Send className="h-4 w-4" />
+            {submitting ? 'Submitting...' : 'Submit for Verification'}
+          </Button>
+        )}
+        {profile?.overallStatus !== 'approved' && (!hasAadhaar || !hasPan) && (
+          <p className="mt-2 text-xs text-red-500">Upload Aadhaar and PAN to enable verification.</p>
+        )}
       </Card>
     </div>
   );
