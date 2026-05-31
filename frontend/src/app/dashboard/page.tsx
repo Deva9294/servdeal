@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, RotateCcw, MapPin, Headphones, ChevronRight, Star, Wrench } from 'lucide-react';
+import { Search, RotateCcw, MapPin, Headphones, ChevronRight, Star, Wrench, Phone, Navigation, User } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -13,7 +13,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 const quickActions = [
   { icon: RotateCcw, label: 'Book Again', desc: 'Repeat last booking', href: '/dashboard/bookings' },
@@ -45,10 +45,43 @@ const recommended = [
   { name: 'Car Wash', slug: 'car-wash', icon: 'Car', color: 'bg-blue-100 text-blue-600', price: '₹399' },
 ];
 
+interface NearbyProvider {
+  _id: string;
+  user?: { name?: string; avatar?: string };
+  city?: string;
+  isOnline?: boolean;
+  rating?: number;
+  experienceYears?: number;
+}
+
 export default function CustomerDashboard() {
   const { user } = useAuth();
   const displayName = user?.name || 'there';
   const [activeTab, setActiveTab] = useState<string>('All');
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [requestingLoc, setRequestingLoc] = useState(false);
+
+  const requestLocation = useCallback(() => {
+    setRequestingLoc(true);
+    setLocationError(null);
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser.');
+      setRequestingLoc(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setRequestingLoc(false);
+      },
+      (err) => {
+        setLocationError(err.message || 'Unable to retrieve your location.');
+        setRequestingLoc(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }, []);
 
   const { data: bookings, isLoading: bookingsLoading } = useQuery({
     queryKey: ['bookings', 'dashboard-recent'],
@@ -64,6 +97,16 @@ export default function CustomerDashboard() {
       const res = await api.get('/payments/wallet');
       return res.data.data;
     },
+  });
+
+  const { data: nearbyProviders, isLoading: nearbyLoading } = useQuery({
+    queryKey: ['nearby-providers', location?.lat, location?.lng],
+    queryFn: async () => {
+      if (!location) return [];
+      const res = await api.get(`/providers/nearby?lat=${location.lat}&lng=${location.lng}&radius=20`);
+      return res.data.data || [];
+    },
+    enabled: !!location,
   });
 
   const filteredBookings = (bookings || []).filter((b: { status: string }) => {
@@ -131,6 +174,102 @@ export default function CustomerDashboard() {
               </Card>
             </Link>
           ))}
+        </div>
+
+        {/* Nearby Providers */}
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold text-brand-navy">Providers Near You</h2>
+            <span className="text-xs text-slate-500">Within 20 km</span>
+          </div>
+
+          {!location && !locationError && !requestingLoc && (
+            <Card className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+              <div className="rounded-full bg-orange-50 p-4">
+                <Navigation className="h-8 w-8 text-brand-orange" />
+              </div>
+              <div>
+                <p className="font-semibold text-brand-navy">Find nearby providers</p>
+                <p className="text-sm text-slate-500 mt-1">Allow location access to see providers within 20 km</p>
+              </div>
+              <Button onClick={requestLocation} className="bg-brand-orange hover:bg-brand-orange/90">Show Nearby Providers</Button>
+            </Card>
+          )}
+
+          {requestingLoc && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+          )}
+
+          {locationError && (
+            <Card className="p-6 text-center">
+              <MapPin className="mx-auto h-8 w-8 text-slate-400" />
+              <p className="mt-2 font-semibold text-brand-navy">Location access denied</p>
+              <p className="text-sm text-slate-500 mt-1">{locationError}</p>
+              <Button onClick={requestLocation} variant="secondary" className="mt-4">Retry</Button>
+            </Card>
+          )}
+
+          {nearbyLoading && !!location && (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+          )}
+
+          {!nearbyLoading && location && (
+            <>
+              {(nearbyProviders || []).length === 0 ? (
+                <Card className="p-6 text-center">
+                  <User className="mx-auto h-8 w-8 text-slate-400" />
+                  <p className="mt-2 font-semibold text-brand-navy">No providers nearby</p>
+                  <p className="text-sm text-slate-500 mt-1">We couldn&apos;t find any providers within 20 km of your location.</p>
+                  <Button onClick={requestLocation} variant="secondary" className="mt-4">Refresh Location</Button>
+                </Card>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {(nearbyProviders || []).map((p: NearbyProvider) => (
+                    <Card key={p._id} className="p-4 hover:shadow-lg transition">
+                      <div className="flex items-center gap-3">
+                        {p.user?.avatar ? (
+                          <img src={p.user.avatar} alt={p.user?.name || 'Provider'} className="h-12 w-12 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-orange/10 text-brand-orange font-bold">
+                            {(p.user?.name || 'P').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate">{p.user?.name || 'Provider'}</p>
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{p.city || 'Nearby'}</span>
+                          </div>
+                        </div>
+                        {p.isOnline && <Badge status="active" className="text-[10px] px-2 py-0.5">Online</Badge>}
+                      </div>
+                      <div className="mt-3 flex items-center gap-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                          <span className="font-medium">{p.rating?.toFixed(1) || '0.0'}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-slate-500">
+                          <Phone className="h-4 w-4" />
+                          <span>{p.experienceYears || 0} yrs exp</span>
+                        </div>
+                      </div>
+                      <Link href={`/services`}>
+                        <Button size="sm" className="mt-3 w-full text-xs bg-brand-orange hover:bg-brand-orange/90">Book Now</Button>
+                      </Link>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* My Bookings with Tabs */}
