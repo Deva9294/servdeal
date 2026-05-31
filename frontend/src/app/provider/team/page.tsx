@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { Users, Plus, Trash2, Star } from 'lucide-react';
+import { Users, Star } from 'lucide-react';
 import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 

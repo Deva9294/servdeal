@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { Sparkles, MapPin, Star, Briefcase, CheckCircle } from 'lucide-react';
+import { Sparkles, MapPin, Briefcase, CheckCircle } from 'lucide-react';
 import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 import { EmptyState } from '@/components/ui/EmptyState';
 

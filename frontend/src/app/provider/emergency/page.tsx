@@ -10,7 +10,7 @@ import { Zap, Shield, Phone, MapPin } from 'lucide-react';
 import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 export default function EmergencyModePage() {
-  const [profile, setProfile] = useState<any>(null);
+  const [, setProfile] = useState<Record<string, unknown> | null>(null);
   const [emergencyOn, setEmergencyOn] = useState(false);
   const [loading, setLoading] = useState(true);
 
