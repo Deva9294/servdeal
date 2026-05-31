@@ -8,7 +8,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Wallet, TrendingUp, Clock, ArrowUpRight, Calendar } from 'lucide-react';
+import { Wallet, TrendingUp, Clock, Calendar } from 'lucide-react';
 
 interface Transaction {
   _id: string;

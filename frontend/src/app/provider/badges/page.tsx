@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { Award, Shield, Star, CheckCircle } from 'lucide-react';
+import { Award, Shield, CheckCircle } from 'lucide-react';
 import { SkeletonPulse } from '@/components/ui/SkeletonCard';
 
 interface Badge {

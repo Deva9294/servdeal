@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { SERVICES } from '@/data/services';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { MapPin, Upload, CheckCircle, Circle, ArrowRight, ArrowLeft, Star, Navigation } from 'lucide-react';
+import { Upload, CheckCircle, ArrowRight, ArrowLeft, Star, Navigation } from 'lucide-react';
 
 const MapContainer = dynamic(() => import('react-leaflet').then((m) => m.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import('react-leaflet').then((m) => m.TileLayer), { ssr: false });
@@ -22,6 +22,7 @@ import 'leaflet/dist/leaflet.css';
 
 let L: typeof import('leaflet') | null = null;
 if (typeof window !== 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   L = require('leaflet');
   const DefaultIcon = L!.Icon.Default;
   if (DefaultIcon && DefaultIcon.prototype) {
