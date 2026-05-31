@@ -3,26 +3,29 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import api from '@/lib/api';
-import { setCredentials, logout } from '@/store/authSlice';
+import { setCredentials, logout, finishInitializing } from '@/store/authSlice';
 
 export function AuthInit() {
   const dispatch = useDispatch();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      dispatch(finishInitializing());
+      return;
+    }
     api
       .get('/auth/me')
       .then(({ data }) => {
         dispatch(setCredentials({ user: data.user, token }));
       })
       .catch((err) => {
-        // Only logout on actual 401 auth failure, not on network/API errors
         const status = (err as { response?: { status?: number } }).response?.status;
         if (status === 401) {
           dispatch(logout());
+        } else {
+          dispatch(finishInitializing());
         }
-        // For network errors (wrong API URL, backend down), keep token for retry
       });
   }, [dispatch]);
 

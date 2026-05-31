@@ -7,7 +7,7 @@ import api from '@/lib/api';
 
 export function useAuth() {
   const dispatch = useDispatch<AppDispatch>();
-  const { user, token } = useSelector((s: RootState) => s.auth);
+  const { user, token, isInitializing } = useSelector((s: RootState) => s.auth);
 
   const logout = async () => {
     try {
@@ -21,5 +21,5 @@ export function useAuth() {
     }
   };
 
-  return { user, token, isLoggedIn: Boolean(token), logout };
+  return { user, token, isLoggedIn: Boolean(token), isInitializing, logout };
 }

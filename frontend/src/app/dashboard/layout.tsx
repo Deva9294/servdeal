@@ -12,6 +12,7 @@ import { Bell as BellIcon, MapPin as LocIcon } from 'lucide-react';
 import { BRAND } from '@/lib/constants';
 import { MobileNav } from '@/components/dashboard/MobileNav';
 import { useAuth } from '@/hooks/useAuth';
+import { useIdleTimer } from '@/hooks/useIdleTimer';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -23,7 +24,7 @@ const navItems = [
   { href: '/dashboard/chat', label: 'Chat', icon: MessageCircle },
   { href: '/tools', label: 'Tool Marketplace', icon: Wrench },
   { href: '/training', label: 'Training Center', icon: GraduationCap },
-  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell, badge: 3 },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/support', label: 'Help & Support', icon: HelpCircle },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   { href: '/dashboard/refer', label: 'Invite & Earn', icon: Gift },
@@ -31,13 +32,14 @@ const navItems = [
 
 export default function CustomerDashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, logout, isLoggedIn } = useAuth();
+  const { user, logout, isLoggedIn, isInitializing } = useAuth();
+  useIdleTimer();
 
   useEffect(() => {
-    if (!isLoggedIn) router.replace('/login?redirect=/dashboard');
-  }, [isLoggedIn, router]);
+    if (!isInitializing && !isLoggedIn) router.replace('/login?redirect=/dashboard');
+  }, [isLoggedIn, isInitializing, router]);
 
-  if (!isLoggedIn) return null;
+  if (isInitializing || !isLoggedIn) return null;
 
   const firstLetter = user?.name?.charAt(0).toUpperCase() || 'U';
   const displayName = user?.name || 'User';
@@ -52,7 +54,7 @@ export default function CustomerDashboardLayout({ children }: { children: React.
             {BRAND.defaultCity}
           </button>
           <div className="flex items-center gap-4">
-            <button className="relative"><BellIcon className="h-5 w-5" /><span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">3</span></button>
+            <button className="relative"><BellIcon className="h-5 w-5" /></button>
             <Link href="/dashboard/profile" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white">{firstLetter}</div>
               <span className="text-sm font-medium">Hi, {displayName}</span>

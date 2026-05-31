@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Search, Bell as BellIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useIdleTimer } from '@/hooks/useIdleTimer';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
@@ -20,14 +21,15 @@ const baseNavItems = [
   { href: '/admin/earnings', label: 'Earnings', icon: DollarSign },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
   { href: '/admin/cms', label: 'CMS Pages', icon: FileText },
-  { href: '/admin/notifications', label: 'Notifications', icon: Bell, badge: 12 },
-  { href: '/admin/tickets', label: 'Support Tickets', icon: Ticket, badge: 5 },
+  { href: '/admin/notifications', label: 'Notifications', icon: Bell },
+  { href: '/admin/tickets', label: 'Support Tickets', icon: Ticket },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, logout, isLoggedIn } = useAuth();
+  const { user, logout, isLoggedIn, isInitializing } = useAuth();
+  useIdleTimer();
 
   const { data: stats } = useQuery({
     queryKey: ['admin-sidebar-stats'],
@@ -46,10 +48,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   );
 
   useEffect(() => {
-    if (!isLoggedIn) router.replace('/login?redirect=/admin');
-  }, [isLoggedIn, router]);
+    if (!isInitializing && !isLoggedIn) router.replace('/login?redirect=/admin');
+  }, [isLoggedIn, isInitializing, router]);
 
-  if (!isLoggedIn) return null;
+  if (isInitializing || !isLoggedIn) return null;
 
   const firstLetter = user?.name?.charAt(0).toUpperCase() || 'A';
   const displayName = user?.name || 'Admin';
@@ -65,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Input placeholder="Search here..." className="pl-10" />
           </div>
           <div className="flex items-center gap-3">
-            <button className="relative"><BellIcon className="h-5 w-5" /><span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">6</span></button>
+            <button className="relative"><BellIcon className="h-5 w-5" /></button>
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-navy text-white">{firstLetter}</div>
               <div className="hidden text-sm md:block">

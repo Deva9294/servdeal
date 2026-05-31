@@ -15,11 +15,20 @@ export type AuthUser = {
 type AuthState = {
   user: AuthUser | null;
   token: string | null;
+  isInitializing: boolean;
+};
+
+const getInitialToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
 };
 
 const initialState: AuthState = {
   user: null,
-  token: null,
+  token: getInitialToken(),
+  isInitializing: true,
 };
 
 const authSlice = createSlice({
@@ -32,6 +41,7 @@ const authSlice = createSlice({
     ) => {
       state.user = action.payload.user;
       state.token = action.payload.token;
+      state.isInitializing = false;
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', action.payload.token);
       }
@@ -44,10 +54,14 @@ const authSlice = createSlice({
     logout: (state) => {
       state.user = null;
       state.token = null;
+      state.isInitializing = false;
       if (typeof window !== 'undefined') localStorage.removeItem('token');
+    },
+    finishInitializing: (state) => {
+      state.isInitializing = false;
     },
   },
 });
 
-export const { setCredentials, updateUser, logout } = authSlice.actions;
+export const { setCredentials, updateUser, logout, finishInitializing } = authSlice.actions;
 export default authSlice.reducer;

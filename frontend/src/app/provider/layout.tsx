@@ -10,12 +10,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Bell as BellIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useIdleTimer } from '@/hooks/useIdleTimer';
 
 const navItems = [
   { href: '/provider', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/provider/profile', label: 'My Profile', icon: User },
   { href: '/provider/services', label: 'My Services', icon: Wrench },
-  { href: '/provider/bookings', label: 'Bookings', icon: Calendar, badge: 8 },
+  { href: '/provider/bookings', label: 'Bookings', icon: Calendar },
   { href: '/provider/earnings', label: 'Earnings', icon: Wallet },
   { href: '/provider/reviews', label: 'Reviews', icon: Star },
   { href: '/provider/availability', label: 'My Availability', icon: Clock },
@@ -25,19 +26,20 @@ const navItems = [
   { href: '/provider/matching', label: 'AI Matching', icon: Sparkles },
   { href: '/provider/emergency', label: 'Emergency Mode', icon: Zap },
   { href: '/provider/team', label: 'My Team', icon: Users },
-  { href: '/provider/notifications', label: 'Notifications', icon: Bell, badge: 5 },
+  { href: '/provider/notifications', label: 'Notifications', icon: Bell },
   { href: '/provider/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function ProviderLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { user, logout, isLoggedIn } = useAuth();
+  const { user, logout, isLoggedIn, isInitializing } = useAuth();
+  useIdleTimer();
 
   useEffect(() => {
-    if (!isLoggedIn) router.replace('/login?redirect=/provider');
-  }, [isLoggedIn, router]);
+    if (!isInitializing && !isLoggedIn) router.replace('/login?redirect=/provider');
+  }, [isLoggedIn, isInitializing, router]);
 
-  if (!isLoggedIn) return null;
+  if (isInitializing || !isLoggedIn) return null;
 
   const displayName = user?.name || 'Provider';
 
@@ -53,7 +55,6 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
           <div className="flex items-center gap-3">
             <button className="relative rounded-lg p-2 hover:bg-slate-100">
               <BellIcon className="h-5 w-5" />
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
             </button>
             <Button variant="secondary" size="sm">Go Offline</Button>
             <button onClick={logout} className="rounded-lg p-2 hover:bg-slate-100" title="Logout">
