@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Provider from '../models/Provider.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
 import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
@@ -19,6 +20,15 @@ export const updateMe = catchAsync(async (req, res) => {
   }
 
   const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
+
+  // Sync location to provider document if user is a provider
+  if (updates.location && user.role === 'provider') {
+    await Provider.findOneAndUpdate(
+      { user: user._id },
+      { currentLocation: { type: 'Point', coordinates: [updates.location.lng, updates.location.lat] } }
+    );
+  }
+
   res.json({ success: true, data: user });
 });
 

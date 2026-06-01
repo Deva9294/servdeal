@@ -1,27 +1,44 @@
 import Provider from '../models/Provider.js';
+import Service from '../models/Service.js';
 import User from '../models/User.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
 
 export const registerProvider = catchAsync(async (req, res) => {
-  const existing = await Provider.findOne({ user: req.user._id });
-  if (existing) throw new AppError('Provider profile already exists', 400);
+  let provider = await Provider.findOne({ user: req.user._id });
 
-  await User.findByIdAndUpdate(req.user._id, { role: 'provider' });
+  // Resolve service slugs to ObjectIds
+  let serviceIds = [];
+  if (Array.isArray(req.body.services) && req.body.services.length > 0) {
+    const slugs = req.body.services.filter((s) => typeof s === 'string');
+    const found = await Service.find({ slug: { $in: slugs } }).select('_id slug');
+    serviceIds = found.map((s) => s._id);
+  }
 
-  const provider = await Provider.create({
-    user: req.user._id,
+  const updateData = {
     businessName: req.body.businessName,
     experienceYears: req.body.experienceYears,
     bio: req.body.bio,
-    services: req.body.services,
+    services: serviceIds,
     bankDetails: req.body.bankDetails,
-    city: req.body.city || req.user.city,
+    city: req.body.city || req.user?.city,
     documents: req.body.documents || [],
     currentLocation: req.body.location
       ? { type: 'Point', coordinates: [req.body.location.lng, req.body.location.lat] }
       : undefined,
-  });
+  };
+
+  if (provider) {
+    // Upsert existing provider document
+    Object.assign(provider, updateData);
+    await provider.save();
+  } else {
+    await User.findByIdAndUpdate(req.user._id, { role: 'provider' });
+    provider = await Provider.create({
+      user: req.user._id,
+      ...updateData,
+    });
+  }
 
   res.status(201).json({ success: true, data: provider });
 });
@@ -35,7 +52,22 @@ export const getMyProviderProfile = catchAsync(async (req, res) => {
 });
 
 export const updateProvider = catchAsync(async (req, res) => {
-  const provider = await Provider.findOneAndUpdate({ user: req.user._id }, req.body, {
+  const update = { ...req.body };
+
+  // Convert service slugs to ObjectIds if services array is provided
+  if (Array.isArray(update.services)) {
+    const slugs = update.services.filter((s) => typeof s === 'string');
+    const found = await Service.find({ slug: { $in: slugs } }).select('_id slug');
+    update.services = found.map((s) => s._id);
+  }
+
+  // Convert location to GeoJSON Point if provided
+  if (update.location && update.location.lat != null && update.location.lng != null) {
+    update.currentLocation = { type: 'Point', coordinates: [update.location.lng, update.location.lat] };
+    delete update.location;
+  }
+
+  const provider = await Provider.findOneAndUpdate({ user: req.user._id }, update, {
     new: true,
   });
   res.json({ success: true, data: provider });

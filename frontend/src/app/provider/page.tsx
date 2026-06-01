@@ -15,9 +15,6 @@ import {
   AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip,
 } from 'recharts';
 import { ServiceIcon } from '@/components/services/ServiceIcon';
-import { SERVICES } from '@/data/services';
-
-const myServices = SERVICES.filter((s) => ['electrician', 'ac-repair', 'fan-repair', 'washing-machine-repair', 'inverter-repair'].includes(s.slug));
 
 function generateEarningsData(total: number) {
   const days = ['1 May', '6 May', '11 May', '16 May', '21 May', '26 May', '31 May'];
@@ -31,11 +28,11 @@ function generateEarningsData(total: number) {
 export default function ProviderDashboard() {
   const qc = useQueryClient();
   const [locLoading, setLocLoading] = useState(false);
-  const { data: profile } = useQuery({
+  const { data: providerProfile } = useQuery({
     queryKey: ['provider-profile'],
     queryFn: async () => {
-      const res = await api.get('/auth/me');
-      return res.data.user;
+      const res = await api.get('/providers/me');
+      return res.data.data;
     },
   });
 
@@ -127,9 +124,9 @@ export default function ProviderDashboard() {
         </div>
         <div className="flex-1">
           <p className="font-semibold">My Live Location</p>
-          {profile?.location?.lat ? (
+          {providerProfile?.currentLocation?.coordinates ? (
             <p className="text-sm text-white/70">
-              Lat: {profile.location.lat.toFixed(5)}, Lng: {profile.location.lng.toFixed(5)}
+              Lat: {providerProfile.currentLocation.coordinates[1].toFixed(5)}, Lng: {providerProfile.currentLocation.coordinates[0].toFixed(5)}
             </p>
           ) : (
             <p className="text-sm text-white/70">Location not set — update to show on customer map</p>
@@ -263,16 +260,16 @@ export default function ProviderDashboard() {
             <Link href="/provider/services" className="text-sm text-brand-orange">Manage Services</Link>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {myServices.map((s) => (
-              <div key={s.slug} className="flex items-center justify-between rounded-xl border p-3">
+            {(providerProfile?.services || []).length === 0 && (
+              <p className="text-sm text-slate-500 col-span-full">No services selected. Go to Manage Services to add services you offer.</p>
+            )}
+            {(providerProfile?.services || []).map((s: { _id: string; slug: string; name: string; icon: string; color?: string }) => (
+              <div key={s._id} className="flex items-center justify-between rounded-xl border p-3">
                 <div className="flex items-center gap-3">
-                  <ServiceIcon name={s.icon} className={s.color} />
+                  <ServiceIcon name={s.icon} className={s.color || 'bg-orange-100 text-brand-orange'} />
                   <span className="font-medium text-sm">{s.name}</span>
                 </div>
-                <label className="relative inline-flex cursor-pointer">
-                  <input type="checkbox" defaultChecked className="sr-only peer" />
-                  <div className="h-6 w-11 rounded-full bg-slate-200 peer-checked:bg-green-500 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-5" />
-                </label>
+                <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">Active</span>
               </div>
             ))}
           </div>

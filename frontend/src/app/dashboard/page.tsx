@@ -287,7 +287,17 @@ export default function CustomerDashboard() {
                           <span>{p.experienceYears || 0} yrs exp</span>
                         </div>
                       </div>
-                      <Link href={`/dashboard/book?provider=${p._id}&service=${SERVICES[0]?.slug || 'electrician'}`}>
+                      {p.services && p.services.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {p.services.slice(0, 3).map((svc) => (
+                            <span key={svc.slug} className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{svc.name}</span>
+                          ))}
+                          {p.services.length > 3 && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">+{p.services.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                      <Link href={`/dashboard/book?provider=${p._id}&service=${p.services?.[0]?.slug || 'electrician'}`}>
                         <Button size="sm" className="mt-3 w-full text-xs bg-brand-orange hover:bg-brand-orange/90">Book Now</Button>
                       </Link>
                     </Card>
