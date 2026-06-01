@@ -201,8 +201,10 @@ export const verifyCompleteOTP = catchAsync(async (req, res) => {
   await updateProviderStats(booking.provider);
 
   if (booking.paymentMethod === 'cod') {
-    let wallet = await Wallet.findOne({ user: booking.provider });
-    if (!wallet) wallet = await Wallet.create({ user: booking.provider, role: 'provider' });
+    const providerDoc = await Provider.findById(booking.provider);
+    const providerUserId = providerDoc ? providerDoc.user : booking.provider;
+    let wallet = await Wallet.findOne({ user: providerUserId });
+    if (!wallet) wallet = await Wallet.create({ user: providerUserId, role: 'provider' });
     wallet.balance += booking.providerEarning;
     wallet.totalEarnings += booking.providerEarning;
     wallet.transactions.push({

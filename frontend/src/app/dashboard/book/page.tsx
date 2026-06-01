@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
@@ -33,6 +33,18 @@ function BookForm() {
   const [city, setCity] = useState('Patna');
   const [payment, setPayment] = useState('payu');
   const [loading, setLoading] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Get customer location on mount
+  const requestCoords = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => toast.error('Could not get location. Auto-assignment may not work.'),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  };
 
   const price =
     pkg === 'premium'
@@ -40,6 +52,12 @@ function BookForm() {
       : pkg === 'standard'
         ? Math.round(service.basePrice * 1.4)
         : service.basePrice;
+
+  useEffect(() => {
+    requestCoords();
+  }, []);
+
+  const providerId = params.get('provider');
 
   const handleBook = async () => {
     if (!date || !address) {
@@ -55,7 +73,8 @@ function BookForm() {
         scheduledAt,
         amount: price,
         paymentMethod: payment === 'payu' ? 'payu' : payment,
-        address: { line1: address, city, state: 'Bihar', pincode: '800001' },
+        providerId: providerId || undefined,
+        address: { line1: address, city, state: 'Bihar', pincode: '800001', lat: coords?.lat, lng: coords?.lng },
       });
 
       const booking = data.data;

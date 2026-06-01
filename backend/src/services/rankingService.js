@@ -135,7 +135,6 @@ export const findRankedProviders = async ({
 }) => {
   const providers = await Provider.find({
     services: serviceId,
-    isOnline: true,
     verificationStatus: 'approved',
     currentLocation: {
       $near: {

@@ -66,6 +66,7 @@ export const getNearbyProviders = catchAsync(async (req, res) => {
       },
     })
       .populate('user', 'name avatar')
+      .populate('services', 'name slug icon color basePrice')
       .limit(20);
     providers = nearby;
   }
@@ -74,6 +75,7 @@ export const getNearbyProviders = catchAsync(async (req, res) => {
   if (providers.length === 0) {
     const fallback = await Provider.find({ verificationStatus: 'approved' })
       .populate('user', 'name avatar')
+      .populate('services', 'name slug icon color basePrice')
       .sort('-rating')
       .limit(20);
     providers = fallback;

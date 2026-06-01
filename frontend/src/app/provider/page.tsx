@@ -84,8 +84,9 @@ export default function ProviderDashboard() {
   const totalBookings = bookings?.length || 0;
   const completed = bookings?.filter((b: { status: string }) => b.status === 'completed').length || 0;
   const pending = bookings?.filter((b: { status: string }) => b.status === 'pending' || b.status === 'confirmed').length || 0;
-  const earnings = wallet?.balance || 0;
-  const earningsData = generateEarningsData(earnings);
+  const totalEarnings = wallet?.totalEarnings || 0;
+  const walletBalance = wallet?.balance || 0;
+  const earningsData = generateEarningsData(totalEarnings);
   const upcomingBookings = (bookings || []).filter((b: { status: string }) => b.status === 'confirmed' || b.status === 'pending');
 
   return (
@@ -96,7 +97,7 @@ export default function ProviderDashboard() {
           { label: 'Total Bookings', value: String(totalBookings), sub: 'This Month', trend: '+18%', icon: Calendar, color: 'bg-blue-50 text-blue-600' },
           { label: 'Completed Bookings', value: String(completed), sub: 'This Month', trend: '+20%', icon: CheckCircle, color: 'bg-green-50 text-green-600' },
           { label: 'Pending Bookings', value: String(pending), sub: 'Today', trend: null, icon: Clock, color: 'bg-orange-50 text-orange-600' },
-          { label: 'Total Earnings', value: formatCurrency(earnings), sub: 'This Month', trend: '+15%', icon: Wallet, color: 'bg-purple-50 text-purple-600' },
+          { label: 'Wallet Balance', value: formatCurrency(walletBalance), sub: 'Available', trend: null, icon: Wallet, color: 'bg-purple-50 text-purple-600' },
         ].map((stat) => (
           <Card key={stat.label} className="p-5">
             <div className="flex items-start justify-between">
@@ -167,15 +168,15 @@ export default function ProviderDashboard() {
           <div className="mt-4 grid grid-cols-3 gap-4 border-t pt-4 text-sm">
             <div>
               <p className="text-xs text-slate-500">Total Earnings</p>
-              <p className="font-bold text-brand-navy">{formatCurrency(earnings)}</p>
+              <p className="font-bold text-brand-navy">{formatCurrency(totalEarnings)}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Service Charges</p>
-              <p className="font-bold text-brand-navy">{formatCurrency(Math.round(earnings * 0.1))}</p>
+              <p className="font-bold text-brand-navy">{formatCurrency(Math.round(totalEarnings * 0.1))}</p>
             </div>
             <div>
               <p className="text-xs text-slate-500">Net Earnings</p>
-              <p className="font-bold text-green-600">{formatCurrency(Math.round(earnings * 0.9))}</p>
+              <p className="font-bold text-green-600">{formatCurrency(Math.round(totalEarnings * 0.9))}</p>
             </div>
           </div>
         </Card>

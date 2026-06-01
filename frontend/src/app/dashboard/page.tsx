@@ -38,12 +38,27 @@ const offers = [
   { title: '20% OFF', code: 'PLUMB20', desc: 'On Plumbing Services', bg: 'bg-blue-50' },
 ];
 
-const recommended = [
-  { name: 'Electrician', slug: 'electrician', icon: 'Zap', color: 'bg-amber-100 text-amber-600', price: '₹299' },
-  { name: 'AC Service', slug: 'ac-repair', icon: 'Snowflake', color: 'bg-sky-100 text-sky-600', price: '₹499' },
-  { name: 'Plumber', slug: 'plumbing', icon: 'Droplets', color: 'bg-cyan-100 text-cyan-600', price: '₹349' },
-  { name: 'Car Wash', slug: 'car-wash', icon: 'Car', color: 'bg-blue-100 text-blue-600', price: '₹399' },
-];
+function getNearbyServices(providers: NearbyProvider[]) {
+  const seen = new Set<string>();
+  const services: { name: string; slug: string; icon: string; color: string; price: string }[] = [];
+  for (const p of providers || []) {
+    for (const s of p.services || []) {
+      if (!seen.has(s.slug)) {
+        seen.add(s.slug);
+        services.push({
+          name: s.name,
+          slug: s.slug,
+          icon: s.icon || 'Wrench',
+          color: s.color || 'bg-orange-100 text-brand-orange',
+          price: `₹${s.basePrice || 299}`,
+        });
+      }
+      if (services.length >= 8) break;
+    }
+    if (services.length >= 8) break;
+  }
+  return services;
+}
 
 interface NearbyProvider {
   _id: string;
@@ -52,6 +67,7 @@ interface NearbyProvider {
   isOnline?: boolean;
   rating?: number;
   experienceYears?: number;
+  services?: { name: string; slug: string; icon: string; color: string; basePrice: number }[];
 }
 
 export default function CustomerDashboard() {
@@ -271,7 +287,7 @@ export default function CustomerDashboard() {
                           <span>{p.experienceYears || 0} yrs exp</span>
                         </div>
                       </div>
-                      <Link href={`/services`}>
+                      <Link href={`/dashboard/book?provider=${p._id}&service=${SERVICES[0]?.slug || 'electrician'}`}>
                         <Button size="sm" className="mt-3 w-full text-xs bg-brand-orange hover:bg-brand-orange/90">Book Now</Button>
                       </Link>
                     </Card>
@@ -346,11 +362,14 @@ export default function CustomerDashboard() {
           </Card>
         )}
 
-        {/* Recommended */}
+        {/* Recommended - Nearby Provider Services */}
         <div>
           <h2 className="mb-4 font-semibold text-brand-navy">Recommended for You</h2>
+          {nearbyProviders && nearbyProviders.length > 0 && getNearbyServices(nearbyProviders).length === 0 && (
+            <p className="text-sm text-slate-500">Nearby providers haven&apos;t listed their services yet.</p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {recommended.map((r) => (
+            {getNearbyServices(nearbyProviders).map((r) => (
               <Link key={r.slug} href={`/services/${r.slug}`}>
                 <Card className="p-4 hover:shadow-lg transition">
                   <ServiceIcon name={r.icon} className={r.color} />
@@ -361,6 +380,9 @@ export default function CustomerDashboard() {
               </Link>
             ))}
           </div>
+          {(!nearbyProviders || nearbyProviders.length === 0) && (
+            <p className="text-sm text-slate-500">Allow location access to see recommended services from nearby providers.</p>
+          )}
         </div>
       </div>
 

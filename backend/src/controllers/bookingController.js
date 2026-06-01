@@ -7,8 +7,10 @@ import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
 import { calculateCommission } from '../services/paymentService.js';
 import { calculateDynamicPrice } from '../services/pricingService.js';
-import { autoAssignBooking } from '../services/assignmentService.js';
+import { autoAssignBooking, acceptBookingOffer, rejectBookingOffer } from '../services/assignmentService.js';
 import { detectFakeBooking } from '../services/trustService.js';
+import { generateBookingStartOTP, verifyBookingStartOTP, generateBookingCompleteOTP, verifyBookingCompleteOTP } from '../services/otpService.js';
+import { updateProviderStats } from '../services/rankingService.js';
 import Wallet from '../models/Wallet.js';
 import User from '../models/User.js';
 
@@ -96,7 +98,29 @@ export const createBooking = catchAsync(async (req, res) => {
   await detectFakeBooking(booking);
 
   const io = req.app.get('io');
-  if (!req.body.providerId && req.body.autoAssign !== false) {
+  if (req.body.providerId) {
+    // Direct booking with specific provider
+    const provider = await Provider.findById(req.body.providerId);
+    if (provider && provider.verificationStatus === 'approved') {
+      booking.provider = provider._id;
+      booking.status = 'confirmed';
+      booking.timeline.push({ status: 'confirmed', note: 'Direct provider booking' });
+      await booking.save();
+
+      await Notification.create({
+        user: provider.user,
+        title: 'New Direct Booking',
+        message: `You have a new booking ${booking.bookingId} for ${service.name}`,
+        type: 'booking',
+        link: `/provider/bookings`,
+      });
+
+      io?.to(`user:${provider.user}`).emit('booking:assigned', {
+        bookingId: booking._id,
+        message: 'New direct booking assigned',
+      });
+    }
+  } else if (req.body.autoAssign !== false) {
     await autoAssignBooking(booking._id, io);
   }
 
@@ -143,7 +167,27 @@ export const updateBookingStatus = catchAsync(async (req, res) => {
 
   booking.status = status;
   booking.timeline.push({ status, note: note || `Status updated to ${status}` });
-  if (status === 'completed') booking.paymentStatus = 'paid';
+  if (status === 'completed') {
+    booking.paymentStatus = 'paid';
+    await updateProviderStats(booking.provider);
+
+    // Credit provider wallet for COD bookings
+    if (booking.paymentMethod === 'cod' && booking.provider) {
+      const providerDoc = await Provider.findById(booking.provider);
+      const providerUserId = providerDoc ? providerDoc.user : booking.provider;
+      let wallet = await Wallet.findOne({ user: providerUserId });
+      if (!wallet) wallet = await Wallet.create({ user: providerUserId, role: 'provider' });
+      wallet.balance += booking.providerEarning;
+      wallet.totalEarnings += booking.providerEarning;
+      wallet.transactions.push({
+        type: 'credit',
+        amount: booking.providerEarning,
+        description: `Earning for booking ${booking.bookingId}`,
+        booking: booking._id,
+      });
+      await wallet.save();
+    }
+  }
   await booking.save();
 
   const io = req.app.get('io');
@@ -211,4 +255,95 @@ export const getAllBookings = catchAsync(async (req, res) => {
     .sort('-createdAt')
     .limit(50);
   res.json({ success: true, data: bookings });
+});
+
+// Provider accepts a booking manually
+export const acceptBooking = catchAsync(async (req, res) => {
+  const provider = await Provider.findOne({ user: req.user._id });
+  if (!provider) throw new AppError('Provider not found', 404);
+
+  const io = req.app.get('io');
+  const result = await acceptBookingOffer(req.params.id, provider._id, io);
+  if (!result.success) throw new AppError(result.message, 400);
+  res.json(result);
+});
+
+// Provider rejects a booking
+export const rejectBooking = catchAsync(async (req, res) => {
+  const provider = await Provider.findOne({ user: req.user._id });
+  if (!provider) throw new AppError('Provider not found', 404);
+
+  const result = await rejectBookingOffer(req.params.id, provider._id);
+  res.json(result);
+});
+
+// Provider starts job (generates OTP sent to customer)
+export const startBooking = catchAsync(async (req, res) => {
+  const provider = await Provider.findOne({ user: req.user._id });
+  if (!provider) throw new AppError('Provider not found', 404);
+
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) throw new AppError('Booking not found', 404);
+  if (booking.status !== 'confirmed') throw new AppError('Booking not confirmed yet', 400);
+  if (String(booking.provider) !== String(provider._id)) throw new AppError('Not assigned to you', 403);
+
+  const otp = await generateBookingStartOTP(booking._id);
+
+  await Notification.create({
+    user: booking.customer,
+    title: 'Job Start OTP',
+    message: `Your OTP to start the job is ${otp}. Share it with your provider.`,
+    type: 'otp',
+  });
+
+  res.json({ success: true, message: 'Start OTP generated', data: { otp } });
+});
+
+// Provider completes job (requires customer OTP)
+export const completeBooking = catchAsync(async (req, res) => {
+  const { otp } = req.body;
+  const provider = await Provider.findOne({ user: req.user._id });
+  if (!provider) throw new AppError('Provider not found', 404);
+
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) throw new AppError('Booking not found', 404);
+  if (String(booking.provider) !== String(provider._id)) throw new AppError('Not assigned to you', 403);
+
+  const valid = await verifyBookingCompleteOTP(req.params.id, otp);
+  if (!valid) throw new AppError('Invalid or expired OTP', 400);
+
+  booking.status = 'completed';
+  booking.paymentStatus = 'paid';
+  booking.otpVerifiedComplete = true;
+  booking.timeline.push({ status: 'completed', note: 'Job completed after OTP verification' });
+  await booking.save();
+
+  await updateProviderStats(booking.provider);
+
+  if (booking.paymentMethod === 'cod') {
+    const providerDoc = await Provider.findById(booking.provider);
+    const providerUserId = providerDoc ? providerDoc.user : booking.provider;
+    let wallet = await Wallet.findOne({ user: providerUserId });
+    if (!wallet) wallet = await Wallet.create({ user: providerUserId, role: 'provider' });
+    wallet.balance += booking.providerEarning;
+    wallet.totalEarnings += booking.providerEarning;
+    wallet.transactions.push({
+      type: 'credit',
+      amount: booking.providerEarning,
+      description: `Earning for booking ${booking.bookingId}`,
+      booking: booking._id,
+    });
+    await wallet.save();
+  }
+
+  const io = req.app.get('io');
+  io?.to(`booking:${booking._id}`).emit('booking:completed', booking);
+  await Notification.create({
+    user: booking.customer,
+    title: 'Job Completed',
+    message: `Your booking ${booking.bookingId} has been completed`,
+    type: 'booking',
+  });
+
+  res.json({ success: true, message: 'Job completed successfully', data: booking });
 });
