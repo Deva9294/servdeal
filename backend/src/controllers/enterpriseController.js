@@ -200,7 +200,8 @@ export const verifyCompleteOTP = catchAsync(async (req, res) => {
 
   await updateProviderStats(booking.provider);
 
-  if (booking.paymentMethod === 'cod') {
+  // Credit provider wallet on job completion (all payment methods)
+  if (booking.provider) {
     const providerDoc = await Provider.findById(booking.provider);
     const providerUserId = providerDoc ? providerDoc.user : booking.provider;
     let wallet = await Wallet.findOne({ user: providerUserId });

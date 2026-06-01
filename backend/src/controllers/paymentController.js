@@ -243,6 +243,13 @@ export const getWallet = catchAsync(async (req, res) => {
   res.json({ success: true, data: wallet });
 });
 
+export const getWalletTransactions = catchAsync(async (req, res) => {
+  let wallet = await Wallet.findOne({ user: req.user._id });
+  if (!wallet) wallet = await Wallet.create({ user: req.user._id });
+  const transactions = wallet.transactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  res.json({ success: true, data: { transactions } });
+});
+
 export const getConfig = catchAsync(async (req, res) => {
   res.json({
     success: true,

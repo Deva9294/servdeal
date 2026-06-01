@@ -11,6 +11,7 @@ router.use(protect);
 router.post('/order', ctrl.createOrder);
 router.post('/verify', ctrl.verifyPayment);
 router.get('/wallet', ctrl.getWallet);
+router.get('/wallet/transactions', ctrl.getWalletTransactions);
 router.post('/wallet/topup', ctrl.walletTopUp);
 
 export default router;

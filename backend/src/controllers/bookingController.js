@@ -171,8 +171,8 @@ export const updateBookingStatus = catchAsync(async (req, res) => {
     booking.paymentStatus = 'paid';
     await updateProviderStats(booking.provider);
 
-    // Credit provider wallet for COD bookings
-    if (booking.paymentMethod === 'cod' && booking.provider) {
+    // Credit provider wallet on job completion (all payment methods)
+    if (booking.provider) {
       const providerDoc = await Provider.findById(booking.provider);
       const providerUserId = providerDoc ? providerDoc.user : booking.provider;
       let wallet = await Wallet.findOne({ user: providerUserId });
@@ -320,7 +320,8 @@ export const completeBooking = catchAsync(async (req, res) => {
 
   await updateProviderStats(booking.provider);
 
-  if (booking.paymentMethod === 'cod') {
+  // Credit provider wallet on job completion (all payment methods)
+  if (booking.provider) {
     const providerDoc = await Provider.findById(booking.provider);
     const providerUserId = providerDoc ? providerDoc.user : booking.provider;
     let wallet = await Wallet.findOne({ user: providerUserId });
