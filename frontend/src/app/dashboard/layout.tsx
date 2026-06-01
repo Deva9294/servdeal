@@ -103,7 +103,11 @@ export default function CustomerDashboardLayout({ children }: { children: React.
           <div className="flex items-center gap-4">
             <button className="relative"><BellIcon className="h-5 w-5" /></button>
             <Link href="/dashboard/profile" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white">{firstLetter}</div>
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Profile" className="h-9 w-9 rounded-full object-cover border border-brand-orange/30" />
+              ) : (
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white font-medium">{firstLetter}</div>
+              )}
               <span className="text-sm font-medium">Hi, {displayName}</span>
             </Link>
             <button onClick={logout} className="rounded-lg p-2 hover:bg-slate-100" title="Logout">

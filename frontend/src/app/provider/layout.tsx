@@ -67,6 +67,13 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
             <button className="relative rounded-lg p-2 hover:bg-slate-100">
               <BellIcon className="h-5 w-5" />
             </button>
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Profile" className="h-9 w-9 rounded-full object-cover border border-brand-orange/30" />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white font-medium">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <Button variant="secondary" size="sm">Go Offline</Button>
             <button onClick={logout} className="rounded-lg p-2 hover:bg-slate-100" title="Logout">
               <LogOut className="h-5 w-5 text-slate-600" />
