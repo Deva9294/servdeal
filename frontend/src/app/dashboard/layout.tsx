@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboard, Calendar, Wallet, MapPin, Star, Tag, Bell, HelpCircle, Settings, Gift, MessageCircle, LogOut,
-  Wrench, GraduationCap, Navigation,
+  Wrench, GraduationCap, Navigation, RotateCcw, Receipt, ShieldCheck, Percent, RefreshCw,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import Link from 'next/link';
@@ -18,6 +18,11 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/bookings', label: 'My Bookings', icon: Calendar },
   { href: '/dashboard/wallet', label: 'Wallet', icon: Wallet },
+  { href: '/dashboard/cashback', label: 'Cashback', icon: Percent },
+  { href: '/dashboard/refunds', label: 'My Refunds', icon: RotateCcw },
+  { href: '/dashboard/warranties', label: 'Warranties', icon: ShieldCheck },
+  { href: '/dashboard/invoices', label: 'Invoices', icon: Receipt },
+  { href: '/dashboard/rebook', label: 'Rebook', icon: RefreshCw },
   { href: '/dashboard/addresses', label: 'My Addresses', icon: MapPin },
   { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
   { href: '/dashboard/offers', label: 'Offers & Coupons', icon: Tag },

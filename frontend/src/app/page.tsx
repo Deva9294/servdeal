@@ -7,6 +7,12 @@ import { ProviderCTA } from '@/components/home/ProviderCTA';
 import { WhyChoose } from '@/components/home/WhyChoose';
 import { Testimonials } from '@/components/home/Testimonials';
 import { AppDownload } from '@/components/home/AppDownload';
+import { TrustedPartners } from '@/components/home/TrustedPartners';
+import { StatsCounter } from '@/components/home/StatsCounter';
+import { ServiceGuarantee } from '@/components/home/ServiceGuarantee';
+import { CustomerSuccessStories } from '@/components/home/CustomerSuccessStories';
+import { MediaCoverage } from '@/components/home/MediaCoverage';
+import { PWAInstallPrompt } from '@/components/home/PWAInstallPrompt';
 import { BRAND } from '@/lib/constants';
 
 export const metadata: Metadata = {
@@ -41,12 +47,18 @@ export default function HomePage() {
     <PublicLayout>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <HeroSection />
+      <TrustedPartners />
       <PopularServices />
+      <StatsCounter />
       <HowItWorks />
+      <ServiceGuarantee />
       <ProviderCTA />
       <WhyChoose />
+      <CustomerSuccessStories />
       <Testimonials />
+      <MediaCoverage />
       <AppDownload />
+      <PWAInstallPrompt />
     </PublicLayout>
   );
 }

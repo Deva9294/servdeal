@@ -2,7 +2,7 @@
 
 import {
   LayoutDashboard, User, Wrench, Calendar, Wallet, Star, Clock, Bell, Settings, LogOut,
-  Award, Briefcase, Zap, Users, AlertTriangle, Sparkles,
+  Award, Briefcase, Zap, Users, AlertTriangle, Sparkles, Trophy,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Button } from '@/components/ui/Button';
@@ -21,6 +21,7 @@ const navItems = [
   { href: '/provider/reviews', label: 'Reviews', icon: Star },
   { href: '/provider/availability', label: 'My Availability', icon: Clock },
   { href: '/provider/badges', label: 'Badges', icon: Award },
+  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
   { href: '/provider/portfolio', label: 'Portfolio', icon: Briefcase },
   { href: '/provider/alerts', label: 'Job Alerts', icon: AlertTriangle },
   { href: '/provider/matching', label: 'AI Matching', icon: Sparkles },

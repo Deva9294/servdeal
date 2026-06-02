@@ -1,7 +1,8 @@
 'use client';
 
 import {
-  LayoutDashboard, Users, Wrench, Calendar, DollarSign, Star, FileText, Bell, Settings, Ticket, LogOut,
+  LayoutDashboard, Users, Wrench, Calendar, DollarSign, Star, FileText, Bell, Settings, Ticket, LogOut, Wallet, Receipt, AlertTriangle,
+  RotateCcw, ShieldCheck, BarChart3,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +21,12 @@ const baseNavItems = [
   { href: '/admin/bookings', label: 'Bookings', icon: Calendar },
   { href: '/admin/earnings', label: 'Earnings', icon: DollarSign },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
+  { href: '/admin/wallet/transactions', label: 'Wallet Transactions', icon: Wallet },
+  { href: '/admin/wallet/payment-logs', label: 'Payment Logs', icon: Receipt },
+  { href: '/admin/wallet/failed-payments', label: 'Failed Payments', icon: AlertTriangle },
+  { href: '/admin/analytics/retention', label: 'Retention Analytics', icon: BarChart3 },
+  { href: '/admin/refunds', label: 'Refund Requests', icon: RotateCcw },
+  { href: '/admin/warranties', label: 'Warranties', icon: ShieldCheck },
   { href: '/admin/cms', label: 'CMS Pages', icon: FileText },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
   { href: '/admin/tickets', label: 'Support Tickets', icon: Ticket },

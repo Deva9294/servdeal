@@ -28,6 +28,12 @@ import toolRoutes from './toolRoutes.js';
 import referralRoutes from './referralRoutes.js';
 import matchingRoutes from './matchingRoutes.js';
 import enterpriseRoutes from './enterpriseRoutes.js';
+import cashbackRoutes from './cashbackRoutes.js';
+import refundRoutes from './refundRoutes.js';
+import warrantyRoutes from './warrantyRoutes.js';
+import leaderboardRoutes from './leaderboardRoutes.js';
+import invoiceRoutes from './invoiceRoutes.js';
+import rebookRoutes from './rebookRoutes.js';
 
 const router = Router();
 
@@ -64,6 +70,12 @@ router.use('/tools', toolRoutes);
 router.use('/referrals', referralRoutes);
 router.use('/matching', matchingRoutes);
 router.use('/enterprise', enterpriseRoutes);
+router.use('/cashback', cashbackRoutes);
+router.use('/refunds', refundRoutes);
+router.use('/warranties', warrantyRoutes);
+router.use('/leaderboard', leaderboardRoutes);
+router.use('/invoices', invoiceRoutes);
+router.use('/rebook', rebookRoutes);
 
 router.get('/health', (req, res) => {
   res.json({ success: true, message: 'ServDeal API is running' });

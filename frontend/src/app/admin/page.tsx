@@ -8,7 +8,7 @@ import api from '@/lib/api';
 import {
   AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Users, Wrench, Calendar, DollarSign, Clock, TrendingUp, TrendingDown, ShieldCheck, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Wrench, Calendar, DollarSign, Clock, TrendingUp, TrendingDown, ShieldCheck, Eye, CheckCircle, XCircle, Wallet, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 const COLORS = ['#ff7a00', '#0b1f4d', '#94a3b8', '#22c55e'];
@@ -47,6 +47,8 @@ export default function AdminDashboard() {
     { label: 'Total Earnings', value: formatCurrency(stats.totalEarnings || 0), trend: '+22.5%', up: true, icon: DollarSign, color: 'bg-orange-100 text-orange-600' },
     { label: 'Pending Bookings', value: stats.pendingBookings, trend: '-8.4%', up: false, icon: Clock, color: 'bg-red-100 text-red-600' },
     { label: 'Pending Verifications', value: stats.pendingVerifications || 0, trend: null, up: null, icon: ShieldCheck, color: 'bg-amber-100 text-amber-600' },
+    { label: 'Wallet Credited', value: formatCurrency(stats.walletStats?.totalCredited || 0), trend: null, up: null, icon: Wallet, color: 'bg-emerald-100 text-emerald-600' },
+    { label: 'Failed Today', value: stats.walletStats?.failedPaymentsToday || 0, trend: null, up: null, icon: AlertTriangle, color: 'bg-red-100 text-red-600' },
   ];
 
   const userPie = [
@@ -75,7 +77,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Main Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((s) => (
           <Card key={s.label} className="p-5">
             <div className="flex justify-between">

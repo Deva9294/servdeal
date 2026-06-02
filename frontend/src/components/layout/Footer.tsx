@@ -10,6 +10,7 @@ import { SERVICE_CATEGORIES } from '@/data/services';
 const quickLinks = [
   { href: '/', label: 'Home' },
   { href: '/services', label: 'All Services' },
+  { href: '/leaderboard', label: 'Leaderboard' },
   { href: '/about', label: 'About Us' },
   { href: '/blog', label: 'Blog' },
   { href: '/careers', label: 'Careers' },

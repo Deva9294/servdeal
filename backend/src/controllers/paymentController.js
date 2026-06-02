@@ -1,10 +1,13 @@
 import Payment from '../models/Payment.js';
 import Booking from '../models/Booking.js';
 import Wallet from '../models/Wallet.js';
+import WalletTransaction from '../models/WalletTransaction.js';
+import PaymentLog from '../models/PaymentLog.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { catchAsync } from '../utils/catchAsync.js';
 import { AppError } from '../utils/AppError.js';
+import { sendWalletRechargeEmail } from '../services/emailService.js';
 import {
   buildPayuPayload,
   verifyPayuResponseHash,
@@ -13,6 +16,7 @@ import {
   createRazorpayOrder,
   verifyRazorpaySignature,
 } from '../services/paymentService.js';
+import { creditWallet } from './walletController.js';
 
 export const createOrder = catchAsync(async (req, res) => {
   const { bookingId, amount, purpose, gateway } = req.body;
@@ -130,17 +134,27 @@ export const verifyPayment = catchAsync(async (req, res) => {
   }
 
   if (payment.metadata?.purpose === 'wallet' || !payment.booking) {
-    let wallet = await Wallet.findOne({ user: req.user._id });
-    if (!wallet) wallet = await Wallet.create({ user: req.user._id });
-    wallet.balance += payment.amount;
-    wallet.transactions.push({
-      type: 'credit',
+    const result = await creditWallet({
+      userId: req.user._id,
+      paymentId: payment._id,
       amount: payment.amount,
+      gateway: payment.gateway,
+      gatewayOrderId: payment.gatewayOrderId,
+      gatewayPaymentId: payment.gatewayPaymentId,
       description: 'Wallet top-up',
+      processedBy: 'api_verify',
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
     });
-    await wallet.save();
-    await User.findByIdAndUpdate(req.user._id, { walletBalance: wallet.balance });
-    return res.json({ success: true, type: 'wallet', data: wallet });
+
+    if (result.duplicate) {
+      return res.json({ success: true, type: 'wallet', duplicate: true, data: result.walletTransaction });
+    }
+
+    const user = await User.findById(req.user._id);
+    await sendWalletRechargeEmail(user.email, user.name, payment.amount, result.newBalance, result.walletTransaction.transactionId);
+
+    return res.json({ success: true, type: 'wallet', data: { balance: result.newBalance, transaction: result.walletTransaction } });
   }
 
   const bookingId = payment.metadata?.bookingId || req.body.udf2;
@@ -176,11 +190,28 @@ export const payuCallback = catchAsync(async (req, res) => {
   const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
   const redirectBase = `${clientUrl}/dashboard`;
 
+  const { status, txnid, mihpayid } = payload;
+
   if (!valid) {
+    if (txnid) {
+      await PaymentLog.create({
+        gatewayOrderId: String(txnid),
+        gatewayPaymentId: String(mihpayid),
+        gateway: 'payu',
+        amount: Number(payload.amount) || 0,
+        status: 'failed',
+        hashVerified: true,
+        hashMatch: false,
+        errorMessage: 'Hash verification failed',
+        responseBody: payload,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        processedBy: 'callback',
+      });
+    }
     return res.redirect(`${redirectBase}?payment=failed`);
   }
 
-  const { status, txnid, mihpayid } = payload;
   const payment = await Payment.findOneAndUpdate(
     { gatewayOrderId: String(txnid) },
     { status: status === 'success' ? 'paid' : 'failed', gatewayPaymentId: String(mihpayid) },
@@ -188,21 +219,45 @@ export const payuCallback = catchAsync(async (req, res) => {
   );
 
   if (!payment) {
+    await PaymentLog.create({
+      gatewayOrderId: String(txnid),
+      gatewayPaymentId: String(mihpayid),
+      gateway: 'payu',
+      amount: Number(payload.amount) || 0,
+      status: 'failed',
+      hashVerified: true,
+      hashMatch: true,
+      errorMessage: 'Payment record not found in database',
+      responseBody: payload,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+      processedBy: 'callback',
+    });
     return res.redirect(`${redirectBase}?payment=failed`);
   }
 
   if (status === 'success') {
     if (payment.metadata?.purpose === 'wallet' || !payment.booking) {
-      let wallet = await Wallet.findOne({ user: payment.user });
-      if (!wallet) wallet = await Wallet.create({ user: payment.user });
-      wallet.balance += payment.amount;
-      wallet.transactions.push({
-        type: 'credit',
+      const result = await creditWallet({
+        userId: payment.user,
+        paymentId: payment._id,
         amount: payment.amount,
+        gateway: 'payu',
+        gatewayOrderId: payment.gatewayOrderId,
+        gatewayPaymentId: String(mihpayid),
         description: 'PayU wallet top-up',
+        processedBy: 'callback',
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
       });
-      await wallet.save();
-      await User.findByIdAndUpdate(payment.user, { walletBalance: wallet.balance });
+
+      if (!result.duplicate) {
+        const user = await User.findById(payment.user);
+        if (user?.email) {
+          await sendWalletRechargeEmail(user.email, user.name, payment.amount, result.newBalance, result.walletTransaction.transactionId);
+        }
+      }
+
       return res.redirect(`${clientUrl}/dashboard/wallet?payment=success`);
     }
 
@@ -230,6 +285,22 @@ export const payuCallback = catchAsync(async (req, res) => {
     }
   }
 
+  await PaymentLog.create({
+    payment: payment._id,
+    user: payment.user,
+    gateway: 'payu',
+    gatewayOrderId: payment.gatewayOrderId,
+    gatewayPaymentId: String(mihpayid),
+    amount: payment.amount,
+    status: 'failed',
+    hashVerified: true,
+    hashMatch: true,
+    responseBody: payload,
+    ipAddress: req.ip,
+    userAgent: req.headers['user-agent'],
+    processedBy: 'callback',
+  });
+
   return res.redirect(`${redirectBase}?payment=failed`);
 });
 
@@ -240,14 +311,54 @@ export const walletTopUp = catchAsync(async (req, res) => {
 export const getWallet = catchAsync(async (req, res) => {
   let wallet = await Wallet.findOne({ user: req.user._id });
   if (!wallet) wallet = await Wallet.create({ user: req.user._id });
-  res.json({ success: true, data: wallet });
+
+  const summary = await WalletTransaction.aggregate([
+    { $match: { user: wallet.user, status: 'success' } },
+    {
+      $group: {
+        _id: '$type',
+        total: { $sum: '$amount' },
+        count: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const creditTotal = summary.find((s) => s._id === 'credit')?.total || 0;
+  const debitTotal = summary.find((s) => s._id === 'debit')?.total || 0;
+
+  res.json({
+    success: true,
+    data: {
+      balance: wallet.balance,
+      pendingBalance: wallet.pendingBalance,
+      totalCredited: creditTotal,
+      totalDebited: debitTotal,
+      user: req.user._id,
+    },
+  });
 });
 
 export const getWalletTransactions = catchAsync(async (req, res) => {
-  let wallet = await Wallet.findOne({ user: req.user._id });
-  if (!wallet) wallet = await Wallet.create({ user: req.user._id });
-  const transactions = wallet.transactions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  res.json({ success: true, data: { transactions } });
+  const { status, type, page = 1, limit = 20 } = req.query;
+  const filter = { user: req.user._id };
+  if (status) filter.status = status;
+  if (type) filter.type = type;
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [transactions, total] = await Promise.all([
+    WalletTransaction.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    WalletTransaction.countDocuments(filter),
+  ]);
+
+  res.json({
+    success: true,
+    data: { transactions, total, page: Number(page), limit: Number(limit) },
+  });
 });
 
 export const getConfig = catchAsync(async (req, res) => {

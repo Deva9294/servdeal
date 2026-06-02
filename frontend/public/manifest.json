@@ -1,16 +1,57 @@
 {
-  "name": "ServDeal",
+  "name": "ServDeal - Home Services",
   "short_name": "ServDeal",
-  "description": "Fixing Problems, Delivering Trust",
+  "description": "Book trusted home services — AC repair, electrician, plumber, cleaning and more. Same-day booking, upfront pricing.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#ff7a00",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["business", "lifestyle", "utilities"],
   "icons": [
     {
       "src": "/images/logo-mono.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo-mono.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/screenshot-home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/images/screenshot-mobile.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Book a Service",
+      "short_name": "Book",
+      "description": "Quickly book a home service",
+      "url": "/services",
+      "icons": [{ "src": "/images/logo-mono.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "My Bookings",
+      "short_name": "Bookings",
+      "description": "View your upcoming bookings",
+      "url": "/dashboard/bookings",
+      "icons": [{ "src": "/images/logo-mono.png", "sizes": "96x96" }]
     }
   ]
 }
