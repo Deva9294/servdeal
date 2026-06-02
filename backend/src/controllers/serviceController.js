@@ -18,6 +18,26 @@ export const getServices = catchAsync(async (req, res) => {
   res.json({ success: true, data: services });
 });
 
+export const getServicesByCategory = catchAsync(async (req, res) => {
+  const categories = await Category.find({ isActive: true }).sort('sortOrder').lean();
+  const services = await Service.find({ isActive: true }).populate('category').lean();
+
+  const grouped = categories.map((cat) => ({
+    ...cat,
+    services: services.filter((s) => s.category?._id?.toString() === cat._id.toString()).map((s) => ({
+      _id: s._id,
+      name: s.name,
+      slug: s.slug,
+      icon: s.icon,
+      color: s.color || 'bg-orange-100 text-brand-orange',
+      basePrice: s.basePrice,
+      description: s.shortDescription || s.description || '',
+    })),
+  })).filter((cat) => cat.services.length > 0);
+
+  res.json({ success: true, data: grouped });
+});
+
 export const getServiceBySlug = catchAsync(async (req, res) => {
   const service = await Service.findOne({ slug: req.params.slug, isActive: true })
     .populate('category')

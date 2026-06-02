@@ -8,7 +8,7 @@ import { ServiceIcon } from '@/components/services/ServiceIcon';
 import api from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { MapPin } from 'lucide-react';
+import { MapPin, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ServiceItem {
   _id: string;
@@ -17,6 +17,15 @@ interface ServiceItem {
   icon: string;
   color?: string;
   basePrice: number;
+  description: string;
+}
+
+interface ServiceCategory {
+  _id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  services: ServiceItem[];
 }
 
 interface ProviderProfile {
@@ -30,12 +39,13 @@ export default function ProviderServicesPage() {
   const qc = useQueryClient();
   const [radius, setRadius] = useState('10');
   const [locLoading, setLocLoading] = useState(false);
+  const [expandedCats, setExpandedCats] = useState<Record<string, boolean>>({});
 
-  const { data: allServices, isLoading: loadingAll } = useQuery({
-    queryKey: ['all-services'],
+  const { data: categoriesData, isLoading: loadingCats } = useQuery({
+    queryKey: ['services-by-category'],
     queryFn: async () => {
-      const res = await api.get('/services');
-      return (res.data.data || []) as ServiceItem[];
+      const res = await api.get('/services/by-category');
+      return (res.data.data || []) as ServiceCategory[];
     },
   });
 
@@ -80,9 +90,14 @@ export default function ProviderServicesPage() {
     });
   };
 
+  const toggleCategory = (catId: string) => {
+    setExpandedCats((prev) => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
   const handleSave = () => {
+    const allServices = (categoriesData || []).flatMap((cat) => cat.services);
     const slugs: string[] = [];
-    for (const svc of allServices || []) {
+    for (const svc of allServices) {
       if (selectedIds.has(svc._id)) slugs.push(svc.slug);
     }
     saveMutation.mutate({
@@ -100,8 +115,9 @@ export default function ProviderServicesPage() {
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        const allServices = (categoriesData || []).flatMap((cat) => cat.services);
         saveMutation.mutate({
-          services: Array.from(selectedIds).map((id) => allServices?.find((s) => s._id === id)?.slug).filter(Boolean) as string[],
+          services: Array.from(selectedIds).map((id) => allServices.find((s) => s._id === id)?.slug).filter(Boolean) as string[],
           serviceRadiusKm: Number(radius) || 10,
           location: { lat: pos.coords.latitude, lng: pos.coords.longitude },
         });
@@ -115,7 +131,7 @@ export default function ProviderServicesPage() {
     );
   };
 
-  const isLoading = loadingAll || loadingProfile;
+  const isLoading = loadingCats || loadingProfile;
 
   return (
     <div className="space-y-6">
@@ -128,35 +144,59 @@ export default function ProviderServicesPage() {
 
       {isLoading && <p className="text-sm text-slate-500">Loading services...</p>}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {(allServices || []).map((s) => {
-          const active = selectedIds.has(s._id);
-          return (
-            <Card
-              key={s._id}
-              className={`p-4 cursor-pointer transition hover:shadow-md ${active ? 'border-green-500 bg-green-50' : 'border-slate-200'}`}
+      <div className="space-y-4">
+        {(categoriesData || []).map((cat) => (
+          <div key={cat._id} className="rounded-xl border border-slate-200 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => toggleCategory(cat._id)}
+              className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100 text-left"
             >
-              <div className="flex items-center justify-between" onClick={() => toggleService(s._id)}>
-                <div className="flex items-center gap-3">
-                  <ServiceIcon name={s.icon} className={s.color || 'bg-orange-100 text-brand-orange'} />
-                  <div>
-                    <span className="font-medium text-sm">{s.name}</span>
-                    <p className="text-xs text-slate-500">₹{s.basePrice} base</p>
-                  </div>
-                </div>
-                <label className="relative inline-flex cursor-pointer" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={active}
-                    onChange={() => toggleService(s._id)}
-                    className="sr-only peer"
-                  />
-                  <div className={`h-6 w-11 rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-5 ${active ? 'bg-green-500' : 'bg-slate-200'}`} />
-                </label>
+              <div className="flex items-center gap-2">
+                <ServiceIcon name={cat.icon} className="bg-brand-navy text-white" />
+                <span className="font-semibold text-brand-navy">{cat.name}</span>
+                <span className="text-xs text-slate-500">({cat.services.length})</span>
               </div>
-            </Card>
-          );
-        })}
+              {expandedCats[cat._id] ? (
+                <ChevronUp className="h-4 w-4 text-slate-500" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-slate-500" />
+              )}
+            </button>
+            {expandedCats[cat._id] && (
+              <div className="p-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {cat.services.map((s) => {
+                  const active = selectedIds.has(s._id);
+                  return (
+                    <Card
+                      key={s._id}
+                      className={`p-4 cursor-pointer transition hover:shadow-md ${active ? 'border-green-500 bg-green-50' : 'border-slate-200'}`}
+                    >
+                      <div className="flex items-center justify-between" onClick={() => toggleService(s._id)}>
+                        <div className="flex items-center gap-3">
+                          <ServiceIcon name={s.icon} className={s.color || 'bg-orange-100 text-brand-orange'} />
+                          <div>
+                            <span className="font-medium text-sm">{s.name}</span>
+                            <p className="text-xs text-slate-500">₹{s.basePrice} base</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex cursor-pointer" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={active}
+                            onChange={() => toggleService(s._id)}
+                            className="sr-only peer"
+                          />
+                          <div className={`h-6 w-11 rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all peer-checked:after:translate-x-5 ${active ? 'bg-green-500' : 'bg-slate-200'}`} />
+                        </label>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       <Card className="p-5 space-y-4">

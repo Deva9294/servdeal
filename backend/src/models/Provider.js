@@ -75,6 +75,18 @@ const providerSchema = new mongoose.Schema(
     skills: [String],
     badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
     isFeatured: { type: Boolean, default: false },
+    shopPhoto: { type: String, default: '' },
+    profilePicture: { type: String, default: '' },
+    shopLocation: {
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], default: [0, 0] },
+    },
+    shopAddress: {
+      line1: String,
+      city: String,
+      state: String,
+      pincode: String,
+    },
     subscriptionStatus: {
       type: String,
       enum: ['none', 'active', 'expired'],

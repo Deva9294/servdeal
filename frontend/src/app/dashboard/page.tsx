@@ -125,6 +125,14 @@ export default function CustomerDashboard() {
     enabled: !!location,
   });
 
+  const { data: allProviders, isLoading: allProvidersLoading } = useQuery({
+    queryKey: ['all-providers'],
+    queryFn: async () => {
+      const res = await api.get('/providers/nearby?radius=1000');
+      return res.data.data || [];
+    },
+  });
+
   const filteredBookings = (bookings || []).filter((b: { status: string }) => {
     if (activeTab === 'All') return true;
     if (activeTab === 'Upcoming') return b.status === 'confirmed';
@@ -210,16 +218,82 @@ export default function CustomerDashboard() {
           </div>
 
           {!location && !locationError && !requestingLoc && (
-            <Card className="flex flex-col items-center justify-center gap-4 p-8 text-center">
-              <div className="rounded-full bg-orange-50 p-4">
-                <Navigation className="h-8 w-8 text-brand-orange" />
-              </div>
-              <div>
-                <p className="font-semibold text-brand-navy">Find nearby providers</p>
-                <p className="text-sm text-slate-500 mt-1">Allow location access to see providers within 20 km</p>
-              </div>
-              <Button onClick={requestLocation} className="bg-brand-orange hover:bg-brand-orange/90">Show Nearby Providers</Button>
-            </Card>
+            <>
+              <Card className="flex flex-col items-center justify-center gap-4 p-8 text-center mb-6">
+                <div className="rounded-full bg-orange-50 p-4">
+                  <Navigation className="h-8 w-8 text-brand-orange" />
+                </div>
+                <div>
+                  <p className="font-semibold text-brand-navy">Find nearby providers</p>
+                  <p className="text-sm text-slate-500 mt-1">Allow location access to see providers within 20 km</p>
+                </div>
+                <Button onClick={requestLocation} className="bg-brand-orange hover:bg-brand-orange/90">Show Nearby Providers</Button>
+              </Card>
+              {/* Show all providers when no location shared */}
+              <h3 className="text-sm font-semibold text-brand-navy mb-3">All Providers</h3>
+              {allProvidersLoading && (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-32" />
+                  ))}
+                </div>
+              )}
+              {!allProvidersLoading && (allProviders || []).length === 0 && (
+                <Card className="p-6 text-center">
+                  <User className="mx-auto h-8 w-8 text-slate-400" />
+                  <p className="mt-2 font-semibold text-brand-navy">No providers available</p>
+                  <p className="text-sm text-slate-500 mt-1">No verified providers found.</p>
+                </Card>
+              )}
+              {!allProvidersLoading && (allProviders || []).length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {(allProviders || []).map((p: NearbyProvider) => (
+                    <Card key={p._id} className="p-4 hover:shadow-lg transition">
+                      <div className="flex items-center gap-3">
+                        {p.user?.avatar ? (
+                          <img src={p.user.avatar} alt={p.user?.name || 'Provider'} className="h-12 w-12 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-orange/10 text-brand-orange font-bold">
+                            {(p.user?.name || 'P').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold truncate">{p.user?.name || 'Provider'}</p>
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <MapPin className="h-3 w-3" />
+                            <span className="truncate">{p.city || 'Nearby'}</span>
+                          </div>
+                        </div>
+                        {p.isOnline && <Badge status="active" className="text-[10px] px-2 py-0.5">Online</Badge>}
+                      </div>
+                      <div className="mt-3 flex items-center gap-3 text-sm">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-amber-400 fill-amber-400" />
+                          <span className="font-medium">{p.rating?.toFixed(1) || '0.0'}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-slate-500">
+                          <Phone className="h-4 w-4" />
+                          <span>{p.experienceYears || 0} yrs exp</span>
+                        </div>
+                      </div>
+                      {p.services && p.services.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {p.services.slice(0, 3).map((svc) => (
+                            <span key={svc.slug} className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{svc.name}</span>
+                          ))}
+                          {p.services.length > 3 && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">+{p.services.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                      <Link href={`/dashboard/book?provider=${p._id}&service=${p.services?.[0]?.slug || 'electrician'}`}>
+                        <Button size="sm" className="mt-3 w-full text-xs bg-brand-orange hover:bg-brand-orange/90">Book Now</Button>
+                      </Link>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </>
           )}
 
           {requestingLoc && (

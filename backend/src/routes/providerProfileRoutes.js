@@ -14,6 +14,7 @@ router.get('/profile/me', controller.getMyProfile);
 router.patch('/availability', controller.toggleAvailability);
 router.patch('/schedule', controller.updateSchedule);
 router.post('/document', upload.single('document'), controller.uploadDocument);
+router.post('/image', upload.single('image'), controller.uploadImage);
 router.patch('/bank', controller.updateBankDetails);
 
 // Admin endpoints

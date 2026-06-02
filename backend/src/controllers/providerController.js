@@ -1,4 +1,5 @@
 import Provider from '../models/Provider.js';
+import ProviderProfile from '../models/ProviderProfile.js';
 import Service from '../models/Service.js';
 import User from '../models/User.js';
 import { catchAsync } from '../utils/catchAsync.js';
@@ -111,6 +112,48 @@ export const getNearbyProviders = catchAsync(async (req, res) => {
       .sort('-rating')
       .limit(20);
     providers = fallback;
+  }
+
+  // Also include approved ProviderProfile documents that may have more complete data
+  const approvedProfileIds = providers.map((p) => p.user?._id?.toString?.() || p.user?.toString?.());
+  const approvedProfiles = await ProviderProfile.find({ overallStatus: 'approved' })
+    .populate('user', 'name email phone avatar')
+    .populate('skills.category', 'name slug')
+    .lean();
+
+  for (const prof of approvedProfiles) {
+    const userId = prof.user?._id?.toString?.();
+    if (!userId || approvedProfileIds.includes(userId)) continue;
+
+    // Find or create matching Provider doc
+    let providerDoc = await Provider.findOne({ user: prof.user });
+    if (!providerDoc) {
+      providerDoc = await Provider.create({
+        user: prof.user,
+        verificationStatus: 'approved',
+        city: prof.address?.city || prof.primaryServiceArea || '',
+        bio: prof.bio || '',
+        skills: (prof.skills || []).map((s) => s.name),
+        serviceRadiusKm: prof.maxTravelDistanceKm || 10,
+        currentLocation: prof.address?.lat && prof.address?.lng
+          ? { type: 'Point', coordinates: [prof.address.lng, prof.address.lat] }
+          : undefined,
+        shopPhoto: prof.shopPhoto || '',
+        profilePicture: prof.profilePicture || '',
+      });
+    }
+
+    providers.push({
+      ...providerDoc.toObject(),
+      user: prof.user,
+      services: (prof.skills || []).map((s) => ({
+        name: s.name,
+        slug: s.name?.toLowerCase().replace(/\s+/g, '-'),
+        icon: 'Wrench',
+        color: 'bg-orange-100 text-brand-orange',
+        basePrice: s.hourlyRate || 299,
+      })),
+    });
   }
 
   res.json({ success: true, data: providers });

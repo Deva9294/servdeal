@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Search, ShieldCheck, ShieldX, Eye } from 'lucide-react';
+import { Search, ShieldCheck, ShieldX, Eye, MapPin, User, Camera } from 'lucide-react';
 
 interface ProviderProfile {
   _id: string;
@@ -24,6 +24,10 @@ interface ProviderProfile {
   panDoc?: { url: string };
   adminNotes?: string;
   rejectionReason?: string;
+  shopPhoto?: string;
+  profilePicture?: string;
+  shopLocation?: { lat: number; lng: number };
+  shopAddress?: { line1?: string; city?: string; state?: string; pincode?: string };
 }
 
 export default function AdminProvidersPage() {
@@ -105,15 +109,25 @@ export default function AdminProvidersPage() {
         {providers.map((p) => (
           <Card key={p._id} className="flex flex-wrap items-center justify-between gap-4 p-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-navy text-sm font-bold text-white">
-                {p.user?.name?.[0] || 'P'}
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-navy text-sm font-bold text-white overflow-hidden">
+                {p.profilePicture ? (
+                  <img src={p.profilePicture} alt={p.user?.name} className="h-full w-full object-cover" />
+                ) : (
+                  p.user?.name?.[0] || 'P'
+                )}
               </div>
               <div>
                 <p className="font-semibold">{p.user?.name}</p>
                 <p className="text-sm text-slate-500">{p.user?.email} · {p.user?.phone || 'No phone'}</p>
                 <p className="text-xs text-slate-400">
-                  {p.skills?.[0]?.name || 'No skills'} · ★ {p.rating || 0} · {p.completedJobs || 0} jobs
+                  {p.skills?.map((s) => s.name).join(', ') || 'No skills'} · ★ {p.rating || 0} · {p.completedJobs || 0} jobs
                 </p>
+                {p.shopAddress?.city && (
+                  <p className="text-xs text-slate-400 flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {p.shopAddress.city}{p.shopAddress.state ? `, ${p.shopAddress.state}` : ''}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -162,19 +176,54 @@ export default function AdminProvidersPage() {
         ))}
       </div>
 
-      {/* Reject Modal */}
+      {/* Detail Modal */}
       {selected && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <Card className="w-full max-w-md space-y-4 p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <Card className="w-full max-w-lg space-y-4 p-6 my-8">
             <h3 className="text-lg font-bold text-brand-navy">
-              {selected.overallStatus === 'pending_approval' ? 'Reject Provider' : 'Provider Details'}
+              {selected.overallStatus === 'pending_approval' ? 'Provider Details' : 'Provider Details'}
             </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              {selected.profilePicture && (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-slate-500 flex items-center gap-1"><Camera className="h-3 w-3" /> Profile Picture</p>
+                  <a href={selected.profilePicture} target="_blank" rel="noreferrer">
+                    <img src={selected.profilePicture} alt="Profile" className="h-24 w-24 rounded-lg object-cover border" />
+                  </a>
+                </div>
+              )}
+              {selected.shopPhoto && (
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-slate-500 flex items-center gap-1"><Camera className="h-3 w-3" /> Shop Photo</p>
+                  <a href={selected.shopPhoto} target="_blank" rel="noreferrer">
+                    <img src={selected.shopPhoto} alt="Shop" className="h-24 w-24 rounded-lg object-cover border" />
+                  </a>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2 text-sm">
               <p><span className="font-medium">Name:</span> {selected.user?.name}</p>
               <p><span className="font-medium">Email:</span> {selected.user?.email}</p>
               <p><span className="font-medium">Status:</span> {selected.overallStatus}</p>
               <p><span className="font-medium">KYC:</span> {selected.kycStatus}</p>
               <p><span className="font-medium">Bank:</span> {selected.bankStatus}</p>
+              <p><span className="font-medium">Skills:</span> {selected.skills?.map((s) => s.name).join(', ') || 'None'}</p>
+
+              {(selected.shopLocation?.lat || selected.shopAddress?.city) && (
+                <div className="rounded-lg border border-slate-200 p-3 bg-slate-50 space-y-1">
+                  <p className="font-medium flex items-center gap-1"><MapPin className="h-4 w-4" /> Shop Location</p>
+                  {selected.shopLocation?.lat && (
+                    <p className="text-xs text-slate-500">Lat: {selected.shopLocation.lat}, Lng: {selected.shopLocation.lng}</p>
+                  )}
+                  {selected.shopAddress?.line1 && <p className="text-xs text-slate-500">{selected.shopAddress.line1}</p>}
+                  <p className="text-xs text-slate-500">
+                    {selected.shopAddress?.city}{selected.shopAddress?.state ? `, ${selected.shopAddress.state}` : ''} {selected.shopAddress?.pincode || ''}
+                  </p>
+                </div>
+              )}
+
               {selected.rejectionReason && (
                 <p className="text-red-600"><span className="font-medium">Rejection Reason:</span> {selected.rejectionReason}</p>
               )}
@@ -193,6 +242,7 @@ export default function AdminProvidersPage() {
                 </div>
               )}
             </div>
+
             {selected.overallStatus === 'pending_approval' && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Rejection Reason (optional)</label>

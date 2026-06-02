@@ -86,6 +86,20 @@ const providerProfileSchema = new mongoose.Schema({
   adminNotes: { type: String, maxlength: 2000 },
   rejectionReason: { type: String, maxlength: 500 },
 
+  // Shop & Profile Media
+  shopPhoto: { type: String, default: '' },
+  profilePicture: { type: String, default: '' },
+  shopLocation: {
+    lat: Number,
+    lng: Number,
+  },
+  shopAddress: {
+    line1: String,
+    city: String,
+    state: String,
+    pincode: String,
+  },
+
   // Stats
   totalJobs: { type: Number, default: 0 },
   completedJobs: { type: Number, default: 0 },

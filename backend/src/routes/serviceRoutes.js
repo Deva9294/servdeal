@@ -5,6 +5,7 @@ import { protect, restrictTo } from '../middleware/auth.js';
 const router = Router();
 
 router.get('/categories', ctrl.getCategories);
+router.get('/by-category', ctrl.getServicesByCategory);
 router.get('/', ctrl.getServices);
 router.get('/:slug', ctrl.getServiceBySlug);
 router.post('/', protect, restrictTo('admin', 'superadmin'), ctrl.createService);

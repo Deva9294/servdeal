@@ -1,5 +1,6 @@
 import ProviderProfile from '../models/ProviderProfile.js';
 import Provider from '../models/Provider.js';
+import Service from '../models/Service.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { AppError } from '../utils/AppError.js';
@@ -50,6 +51,48 @@ export const upsertProfile = catchAsync(async (req, res) => {
     await user.save();
   }
 
+  // Sync with Provider document so customer dashboard can find this provider
+  let providerDoc = await Provider.findOne({ user: userId });
+  const serviceSlugs = (profile.skills || []).map((s) => s.name?.toLowerCase().replace(/\s+/g, '-'));
+  const serviceDocs = await Service.find({ slug: { $in: serviceSlugs } }).select('_id');
+  const serviceIds = serviceDocs.map((s) => s._id);
+
+  const providerData = {
+    user: userId,
+    businessName: profile.bio?.slice(0, 50) || user.name,
+    bio: profile.bio || '',
+    experienceYears: (profile.skills || []).reduce((sum, s) => sum + (s.experienceYears || 0), 0) / (profile.skills?.length || 1),
+    services: serviceIds,
+    skills: (profile.skills || []).map((s) => s.name),
+    city: profile.address?.city || profile.primaryServiceArea || '',
+    serviceRadiusKm: profile.maxTravelDistanceKm || 10,
+    currentLocation: profile.address?.lat && profile.address?.lng
+      ? { type: 'Point', coordinates: [profile.address.lng, profile.address.lat] }
+      : undefined,
+    shopPhoto: profile.shopPhoto || '',
+    profilePicture: profile.profilePicture || '',
+    shopLocation: profile.shopLocation?.lat && profile.shopLocation?.lng
+      ? { type: 'Point', coordinates: [profile.shopLocation.lng, profile.shopLocation.lat] }
+      : undefined,
+    shopAddress: profile.shopAddress || undefined,
+    bankDetails: profile.bankDetails
+      ? {
+          accountName: profile.bankDetails.accountHolderName,
+          accountNumber: profile.bankDetails.accountNumber,
+          ifsc: profile.bankDetails.ifscCode,
+          upiId: profile.bankDetails.upiId,
+        }
+      : undefined,
+    verificationStatus: profile.overallStatus === 'approved' ? 'approved' : 'pending',
+  };
+
+  if (providerDoc) {
+    Object.assign(providerDoc, providerData);
+    await providerDoc.save();
+  } else {
+    await Provider.create(providerData);
+  }
+
   res.json({ success: true, message: requestVerification ? 'Profile submitted for review' : 'Profile saved', profile });
 });
 
@@ -90,6 +133,24 @@ export const updateSchedule = catchAsync(async (req, res) => {
   );
   if (!profile) throw new AppError('Provider profile not found', 404);
   res.json({ success: true, schedule: profile.schedule });
+});
+
+// Upload shop photo or profile picture
+export const uploadImage = catchAsync(async (req, res) => {
+  if (!req.file) throw new AppError('No file uploaded', 400);
+  const { type } = req.body;
+  if (!['shopPhoto', 'profilePicture'].includes(type)) throw new AppError('Invalid image type', 400);
+
+  const result = await uploadToCloudinary(req.file.buffer, `providers/${req.user._id}/${type}`);
+
+  const profile = await ProviderProfile.findOneAndUpdate(
+    { user: req.user._id },
+    { $set: { [type]: result.secure_url } },
+    { new: true }
+  );
+  if (!profile) throw new AppError('Provider profile not found', 404);
+
+  res.json({ success: true, message: 'Image uploaded', url: result.secure_url });
 });
 
 // Upload KYC document
@@ -201,13 +262,30 @@ export const verifyProvider = catchAsync(async (req, res) => {
   const providerDoc = await Provider.findOne({ user: profile.user });
   if (providerDoc) {
     providerDoc.verificationStatus = status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : providerDoc.verificationStatus;
+    providerDoc.shopPhoto = profile.shopPhoto || providerDoc.shopPhoto;
+    providerDoc.profilePicture = profile.profilePicture || providerDoc.profilePicture;
+    providerDoc.shopLocation = profile.shopLocation?.lat && profile.shopLocation?.lng
+      ? { type: 'Point', coordinates: [profile.shopLocation.lng, profile.shopLocation.lat] }
+      : providerDoc.shopLocation;
+    providerDoc.shopAddress = profile.shopAddress || providerDoc.shopAddress;
+    providerDoc.city = profile.address?.city || profile.primaryServiceArea || providerDoc.city || '';
+    providerDoc.skills = (profile.skills || []).map((s) => s.name);
     await providerDoc.save();
   } else if (status === 'approved') {
     // Auto-create Provider document if missing
     await Provider.create({
       user: profile.user,
       verificationStatus: 'approved',
-      city: '',
+      city: profile.address?.city || profile.primaryServiceArea || '',
+      bio: profile.bio || '',
+      skills: (profile.skills || []).map((s) => s.name),
+      serviceRadiusKm: profile.maxTravelDistanceKm || 10,
+      shopPhoto: profile.shopPhoto || '',
+      profilePicture: profile.profilePicture || '',
+      shopLocation: profile.shopLocation?.lat && profile.shopLocation?.lng
+        ? { type: 'Point', coordinates: [profile.shopLocation.lng, profile.shopLocation.lat] }
+        : undefined,
+      shopAddress: profile.shopAddress || undefined,
     });
   }
 
