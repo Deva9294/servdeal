@@ -9,5 +9,6 @@ router.post('/register', protect, ctrl.registerProvider);
 router.get('/me', protect, restrictTo('provider'), ctrl.getMyProviderProfile);
 router.patch('/me', protect, restrictTo('provider'), ctrl.updateProvider);
 router.patch('/online', protect, restrictTo('provider'), ctrl.toggleOnline);
+router.patch('/location', protect, restrictTo('provider'), ctrl.updateLocation);
 
 export default router;

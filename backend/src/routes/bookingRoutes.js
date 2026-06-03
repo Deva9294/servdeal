@@ -9,15 +9,12 @@ router.use(protect);
 router.post('/', ctrl.createBooking);
 router.get('/my', ctrl.getMyBookings);
 router.get('/provider', restrictTo('provider'), ctrl.getProviderBookings);
-router.patch('/location', restrictTo('provider'), ctrl.updateProviderLocation);
 router.get('/:id', ctrl.getBooking);
-router.patch('/:id/status', ctrl.updateBookingStatus);
-router.patch('/:id/assign', restrictTo('admin', 'superadmin'), ctrl.assignProvider);
 
 // Provider actions
 router.post('/:id/accept', restrictTo('provider'), ctrl.acceptBooking);
 router.post('/:id/reject', restrictTo('provider'), ctrl.rejectBooking);
-router.post('/:id/start', restrictTo('provider'), ctrl.startBooking);
-router.post('/:id/complete', restrictTo('provider'), ctrl.completeBooking);
+router.post('/:id/start', restrictTo('provider'), ctrl.startJob);
+router.post('/:id/complete', restrictTo('provider'), ctrl.completeJob);
 
 export default router;

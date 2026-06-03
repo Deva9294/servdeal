@@ -6,21 +6,17 @@ const timelineSchema = new mongoose.Schema({
   at: { type: Date, default: Date.now },
 });
 
-const notifiedProviderSchema = new mongoose.Schema({
-  provider: { type: mongoose.Schema.Types.ObjectId, ref: 'Provider' },
-  notifiedAt: { type: Date, default: Date.now },
-  respondedAt: Date,
-  response: { type: String, enum: ['accepted', 'rejected', 'timeout'] },
-});
-
 const bookingSchema = new mongoose.Schema(
   {
     bookingId: { type: String, unique: true },
     customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     provider: { type: mongoose.Schema.Types.ObjectId, ref: 'Provider' },
     service: { type: mongoose.Schema.Types.ObjectId, ref: 'Service', required: true },
-    packageName: String,
+    category: { type: String, required: true },
+
+    // Scheduling
     scheduledAt: { type: Date, required: true },
+    timeSlot: { type: String }, // e.g., "10:00-11:00"
     address: {
       line1: String,
       city: String,
@@ -29,36 +25,38 @@ const bookingSchema = new mongoose.Schema(
       lat: Number,
       lng: Number,
     },
+
+    // Status flow: pending -> upcoming -> in_progress -> completed -> paid
     status: {
       type: String,
-      enum: ['pending', 'confirmed', 'ongoing', 'completed', 'cancelled', 'disputed'],
+      enum: ['pending', 'upcoming', 'in_progress', 'completed', 'paid', 'cancelled'],
       default: 'pending',
     },
-    isEmergency: { type: Boolean, default: false },
-    isAutoAssigned: { type: Boolean, default: false },
-    autoAssignedAt: Date,
-    notifiedProviders: [notifiedProviderSchema],
-    assignmentRadiusKm: { type: Number, default: 10 },
+
+    // Customer description at booking time
+    customerNotes: { type: String, maxlength: 2000 },
+    voiceNoteUrl: { type: String },
+
+    // Provider enters final amount after job completion
+    estimatedAmount: { type: Number, default: 0 },
+    finalAmount: { type: Number },
+    providerNotes: { type: String, maxlength: 1000 },
+
+    // Payment (post-service via PayU)
     paymentMethod: {
       type: String,
-      enum: ['stripe', 'payu', 'upi', 'wallet', 'cod'],
+      enum: ['payu', 'upi', 'cod'],
       default: 'payu',
     },
     paymentStatus: {
       type: String,
-      enum: ['pending', 'paid', 'refunded', 'failed'],
+      enum: ['pending', 'paid', 'failed'],
       default: 'pending',
     },
-    amount: { type: Number, required: true },
-    baseAmount: { type: Number, default: 0 },
-    surgeMultiplier: { type: Number, default: 1 },
-    dynamicPricingApplied: { type: Boolean, default: false },
-    gst: { type: Number, default: 0 },
-    discount: { type: Number, default: 0 },
-    commission: { type: Number, default: 0 },
-    providerEarning: { type: Number, default: 0 },
-    coupon: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
-    notes: String,
+    payuPaymentLink: { type: String },
+    payuTxnId: { type: String },
+
+    // Timeline & tracking
     timeline: [timelineSchema],
     providerLocation: {
       lat: Number,
@@ -66,10 +64,11 @@ const bookingSchema = new mongoose.Schema(
       updatedAt: Date,
     },
     etaMinutes: Number,
-    invoiceUrl: String,
-    otpVerifiedStart: { type: Boolean, default: false },
-    otpVerifiedComplete: { type: Boolean, default: false },
-    customerSatisfactionScore: { type: Number, min: 1, max: 5 },
+
+    // Review after payment
+    customerRating: { type: Number, min: 1, max: 5 },
+    customerReview: { type: String, maxlength: 1000 },
+    providerRating: { type: Number, min: 1, max: 5 },
   },
   { timestamps: true }
 );
@@ -80,5 +79,10 @@ bookingSchema.pre('save', function generateBookingId(next) {
   }
   next();
 });
+
+// Prevent double booking for same provider + timeSlot + scheduledAt date
+bookingSchema.index({ provider: 1, scheduledAt: 1, timeSlot: 1 });
+bookingSchema.index({ customer: 1, status: 1 });
+bookingSchema.index({ provider: 1, status: 1 });
 
 export default mongoose.model('Booking', bookingSchema);

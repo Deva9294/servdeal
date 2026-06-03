@@ -1,56 +1,36 @@
 import User from '../models/User.js';
 import Provider from '../models/Provider.js';
-import ProviderProfile from '../models/ProviderProfile.js';
 import Booking from '../models/Booking.js';
 import Payment from '../models/Payment.js';
-import WalletTransaction from '../models/WalletTransaction.js';
-import PaymentLog from '../models/PaymentLog.js';
 import { catchAsync } from '../utils/catchAsync.js';
+import { AppError } from '../utils/AppError.js';
 
 export const getDashboardStats = catchAsync(async (req, res) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [totalUsers, totalProviders, totalBookings, payments, pendingBookings, pendingVerifications, walletStats, failedPaymentsToday, walletVolume] =
+  const [totalUsers, totalProviders, totalBookings, payments, pendingBookings, pendingVerifications] =
     await Promise.all([
       User.countDocuments({ role: 'customer' }),
       User.countDocuments({ role: 'provider' }),
       Booking.countDocuments(),
       Payment.aggregate([{ $match: { status: 'paid' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
       Booking.countDocuments({ status: 'pending' }),
-      ProviderProfile.countDocuments({ overallStatus: 'pending_approval' }),
-      WalletTransaction.aggregate([
-        { $match: { status: 'success' } },
-        { $group: { _id: '$type', total: { $sum: '$amount' }, count: { $sum: 1 } } },
-      ]),
-      PaymentLog.countDocuments({ status: { $in: ['failed', 'duplicate'] }, createdAt: { $gte: today } }),
-      WalletTransaction.aggregate([
-        { $match: { status: 'success', createdAt: { $gte: today } } },
-        { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
-      ]),
+      Provider.countDocuments({ verificationStatus: 'pending_verification' }),
     ]);
 
-  const completed = await Booking.countDocuments({ status: 'completed' });
+  const completed = await Booking.countDocuments({ status: { $in: ['completed', 'paid'] } });
   const cancelled = await Booking.countDocuments({ status: 'cancelled' });
 
   const monthlyBookings = await Booking.aggregate([
-    {
-      $match: {
-        createdAt: { $gte: new Date(new Date().setDate(1)) },
-      },
-    },
-    {
-      $group: {
-        _id: { $dayOfMonth: '$createdAt' },
-        count: { $sum: 1 },
-      },
-    },
+    { $match: { createdAt: { $gte: new Date(new Date().setDate(1)) } } },
+    { $group: { _id: { $dayOfMonth: '$createdAt' }, count: { $sum: 1 } } },
     { $sort: { _id: 1 } },
   ]);
 
-  const topProviders = await Provider.find()
+  const topProviders = await Provider.find({ verificationStatus: 'verified' })
     .populate('user', 'name avatar')
-    .sort('-totalEarnings')
+    .sort('-completedJobs')
     .limit(5);
 
   res.json({
@@ -72,18 +52,11 @@ export const getDashboardStats = catchAsync(async (req, res) => {
         blocked: await User.countDocuments({ isBlocked: true }),
       },
       bookingStats: {
-        completed: await Booking.countDocuments({ status: 'completed' }),
+        completed: await Booking.countDocuments({ status: { $in: ['completed', 'paid'] } }),
         pending: await Booking.countDocuments({ status: 'pending' }),
-        confirmed: await Booking.countDocuments({ status: 'confirmed' }),
+        upcoming: await Booking.countDocuments({ status: 'upcoming' }),
+        inProgress: await Booking.countDocuments({ status: 'in_progress' }),
         cancelled: await Booking.countDocuments({ status: 'cancelled' }),
-      },
-      walletStats: {
-        totalCredited: walletStats.find((s) => s._id === 'credit')?.total || 0,
-        totalDebited: walletStats.find((s) => s._id === 'debit')?.total || 0,
-        totalTransactions: walletStats.reduce((sum, s) => sum + s.count, 0),
-        todayVolume: walletVolume[0]?.total || 0,
-        todayCount: walletVolume[0]?.count || 0,
-        failedPaymentsToday,
       },
     },
   });
@@ -99,25 +72,35 @@ export const updateUser = catchAsync(async (req, res) => {
   res.json({ success: true, data: user });
 });
 
-export const approveProvider = catchAsync(async (req, res) => {
-  let provider = await Provider.findById(req.params.id);
-  if (provider) {
-    provider.verificationStatus = 'approved';
-    await provider.save();
-  } else {
-    // Try to find by user id or create new Provider document
-    const userProvider = await User.findById(req.params.id);
-    if (userProvider) {
-      provider = await Provider.create({
-        user: userProvider._id,
-        verificationStatus: 'approved',
-        city: userProvider.city || '',
-      });
-    }
+export const getPendingVerifications = catchAsync(async (req, res) => {
+  const providers = await Provider.find({ verificationStatus: 'pending_verification' })
+    .populate('user', 'name email phone avatar')
+    .sort('-createdAt');
+  res.json({ success: true, count: providers.length, data: providers });
+});
+
+export const verifyProvider = catchAsync(async (req, res) => {
+  const { status, reason } = req.body; // status: 'verified' | 'rejected'
+  if (!['verified', 'rejected'].includes(status)) {
+    throw new AppError("Status must be 'verified' or 'rejected'", 400);
   }
+  if (status === 'rejected' && (!reason || reason.trim().length < 5)) {
+    throw new AppError('Rejection reason is required (min 5 chars).', 400);
+  }
+
+  const provider = await Provider.findById(req.params.id);
   if (!provider) throw new AppError('Provider not found', 404);
-  await provider.populate('user', 'name email');
-  res.json({ success: true, data: provider });
+
+  provider.verificationStatus = status;
+  provider.rejectionReason = status === 'rejected' ? reason : '';
+  if (status === 'verified') provider.verifiedAt = new Date();
+  await provider.save();
+
+  res.json({
+    success: true,
+    message: `Provider ${status === 'verified' ? 'approved' : 'rejected'}.`,
+    data: provider,
+  });
 });
 
 export const getProviders = catchAsync(async (req, res) => {

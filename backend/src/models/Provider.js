@@ -1,43 +1,52 @@
 import mongoose from 'mongoose';
 
-const documentSchema = new mongoose.Schema({
-  type: { type: String, enum: ['aadhaar', 'pan', 'license', 'other'] },
-  url: String,
+const kycDocSchema = new mongoose.Schema({
+  type: { type: String, enum: ['aadhaar', 'pan', 'skill_certificate', 'shop_license'], required: true },
+  url: { type: String, required: true },
+  number: String,
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-});
-
-const portfolioSchema = new mongoose.Schema({
-  title: String,
-  description: String,
-  mediaUrl: String,
-  mediaType: { type: String, enum: ['image', 'video'], default: 'image' },
-  createdAt: { type: Date, default: Date.now },
-});
-
-const certificateSchema = new mongoose.Schema({
-  title: String,
-  issuer: String,
-  url: String,
-  verified: { type: Boolean, default: false },
-  verifiedAt: Date,
-  createdAt: { type: Date, default: Date.now },
+  uploadedAt: { type: Date, default: Date.now },
 });
 
 const providerSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
-    businessName: String,
-    services: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Service' }],
+
+    // Identity
+    fullName: { type: String, trim: true },
+    shopName: { type: String, trim: true },
+    phone: { type: String, trim: true },
+    mobileVerified: { type: Boolean, default: false },
+    profilePicture: { type: String, default: '' },
+
+    // Categories (multi-select)
+    categories: [{ type: String }],
+
+    // KYC Documents
+    kycDocuments: [kycDocSchema],
+
+    // Bio & Skills
+    bio: { type: String, maxlength: 1000 },
+    skills: [String],
     experienceYears: { type: Number, default: 0 },
-    bio: String,
-    rating: { type: Number, default: 0 },
-    reviewCount: { type: Number, default: 0 },
-    documents: [documentSchema],
+
+    // Verification
     verificationStatus: {
       type: String,
-      enum: ['pending', 'approved', 'rejected'],
-      default: 'pending',
+      enum: ['pending_verification', 'verified', 'rejected', 'suspended'],
+      default: 'pending_verification',
     },
+    rejectionReason: { type: String, maxlength: 500 },
+    verifiedAt: Date,
+
+    // Location (auto-fetched via GPS)
+    currentLocation: {
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], required: true }, // [lng, lat]
+    },
+    locationUpdatedAt: { type: Date, default: Date.now },
+
+    // Availability
     isOnline: { type: Boolean, default: false },
     lastOnlineAt: Date,
     availability: {
@@ -49,60 +58,43 @@ const providerSchema = new mongoose.Schema(
       saturday: { enabled: Boolean, slots: [String] },
       sunday: { enabled: Boolean, slots: [String] },
     },
+
+    // Bank
     bankDetails: {
       accountName: String,
       accountNumber: String,
       ifsc: String,
       upiId: String,
     },
-    serviceRadiusKm: { type: Number, default: 10 },
-    currentLocation: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], default: [85.1376, 25.5941] },
-    },
-    totalEarnings: { type: Number, default: 0 },
-    pendingPayout: { type: Number, default: 0 },
-    walletBalance: { type: Number, default: 0 },
+
+    // Stats
+    rating: { type: Number, default: 0, min: 0, max: 5 },
+    reviewCount: { type: Number, default: 0 },
     completedJobs: { type: Number, default: 0 },
     cancelledJobs: { type: Number, default: 0 },
     totalJobRequests: { type: Number, default: 0 },
     acceptedJobs: { type: Number, default: 0 },
     avgResponseTimeMinutes: { type: Number, default: 0 },
     customerSatisfactionScore: { type: Number, default: 0 },
+
+    // Legacy / compatibility
+    businessName: String,
     city: String,
-    portfolio: [portfolioSchema],
-    certificates: [certificateSchema],
-    skills: [String],
-    badges: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Badge' }],
-    isFeatured: { type: Boolean, default: false },
+    services: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Service' }],
+    serviceRadiusKm: { type: Number, default: 20 },
     shopPhoto: { type: String, default: '' },
-    profilePicture: { type: String, default: '' },
-    shopLocation: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], default: [0, 0] },
-    },
     shopAddress: {
       line1: String,
       city: String,
       state: String,
       pincode: String,
     },
-    subscriptionStatus: {
-      type: String,
-      enum: ['none', 'active', 'expired'],
-      default: 'none',
-    },
-    subscriptionExpiresAt: Date,
-    enabledServices: [
-      {
-        service: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
-        isActive: { type: Boolean, default: true },
-      },
-    ],
   },
   { timestamps: true }
 );
 
 providerSchema.index({ currentLocation: '2dsphere' });
+providerSchema.index({ verificationStatus: 1, categories: 1 });
+providerSchema.index({ user: 1 });
 
 export default mongoose.model('Provider', providerSchema);
