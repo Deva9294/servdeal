@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { formatCurrency } from '@/lib/utils';
 import api from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -17,12 +16,15 @@ interface Booking {
   customer?: { name: string; phone: string };
   status: string;
   scheduledAt: string;
-  amount: number;
+  estimatedAmount: number;
+  paymentStatus?: string;
+  address?: { line1?: string; city?: string };
 }
 
 export default function ProviderBookingsPage() {
   const qc = useQueryClient();
-  const [otpMap, setOtpMap] = useState<Record<string, string>>({});
+  const locationWatchRef = useRef<number | null>(null);
+  const [activeTrackingId, setActiveTrackingId] = useState<string | null>(null);
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['provider-bookings'],
@@ -31,6 +33,32 @@ export default function ProviderBookingsPage() {
       return res.data.data as Booking[];
     },
   });
+
+  const stopTracking = () => {
+    if (locationWatchRef.current != null) {
+      navigator.geolocation.clearWatch(locationWatchRef.current);
+      locationWatchRef.current = null;
+    }
+    setActiveTrackingId(null);
+  };
+
+  const startLocationTracking = (bookingId: string) => {
+    if (!navigator.geolocation) return;
+    stopTracking();
+    setActiveTrackingId(bookingId);
+    locationWatchRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        api.patch(`/bookings/${bookingId}/location`, {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        }).catch(() => undefined);
+      },
+      () => toast.error('Could not share live location'),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+  };
+
+  useEffect(() => () => stopTracking(), []);
 
   const acceptMutation = useMutation({
     mutationFn: (id: string) => api.post(`/bookings/${id}/accept`),
@@ -50,40 +78,50 @@ export default function ProviderBookingsPage() {
       toast.success('Booking rejected');
       qc.invalidateQueries({ queryKey: ['provider-bookings'] });
     },
-    onError: (err: unknown) => {
-      const e = err as { response?: { data?: { message?: string } } };
-      toast.error(e?.response?.data?.message || 'Failed to reject');
-    },
   });
 
   const startMutation = useMutation({
-    mutationFn: (id: string) => api.post(`/bookings/${id}/start`),
-    onSuccess: (res) => {
-      toast.success(`Start OTP: ${res.data.data.otp} (shared with customer)`);
+    mutationFn: (id: string) =>
+      new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            try {
+              const res = await api.post(`/bookings/${id}/start`, {
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+              });
+              resolve(res);
+            } catch (err) {
+              reject(err);
+            }
+          },
+          () => reject(new Error('Enable GPS to start job')),
+          { enableHighAccuracy: true }
+        );
+      }),
+    onSuccess: (_res, id) => {
+      toast.success('Job started. Customer can track your live location.');
+      startLocationTracking(String(id));
       qc.invalidateQueries({ queryKey: ['provider-bookings'] });
     },
     onError: (err: unknown) => {
-      const e = err as { response?: { data?: { message?: string } } };
-      toast.error(e?.response?.data?.message || 'Failed to start');
+      const msg = err instanceof Error ? err.message : 'Failed to start job';
+      toast.error(msg);
     },
   });
 
   const completeMutation = useMutation({
-    mutationFn: ({ id, otp }: { id: string; otp: string }) => api.post(`/bookings/${id}/complete`, { otp }),
-    onSuccess: () => {
-      toast.success('Job completed! Earnings credited.');
+    mutationFn: (id: string) => api.post(`/bookings/${id}/complete`),
+    onSuccess: (_res, id) => {
+      toast.success('Service marked complete');
+      if (activeTrackingId === id) stopTracking();
       qc.invalidateQueries({ queryKey: ['provider-bookings'] });
-      qc.invalidateQueries({ queryKey: ['wallet'] });
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
       toast.error(e?.response?.data?.message || 'Failed to complete');
     },
   });
-
-  const handleOtpChange = (id: string, val: string) => {
-    setOtpMap((prev) => ({ ...prev, [id]: val }));
-  };
 
   return (
     <div className="space-y-6">
@@ -95,39 +133,37 @@ export default function ProviderBookingsPage() {
           <Card key={b._id} className="flex flex-wrap items-center justify-between gap-4 p-4">
             <div className="flex-1 min-w-[200px]">
               <p className="font-semibold">{b.service?.name || 'Service'}</p>
-              <p className="text-sm text-slate-500">#{b.bookingId} · {b.customer?.name || 'Customer'} · {b.customer?.phone || ''}</p>
+              <p className="text-sm text-slate-500">
+                #{b.bookingId} · {b.customer?.name || 'Customer'} · {b.customer?.phone || ''}
+              </p>
               <p className="text-xs text-slate-400">{new Date(b.scheduledAt).toLocaleString('en-IN')}</p>
+              <p className="text-xs text-slate-400">{b.address?.line1}, {b.address?.city}</p>
             </div>
             <Badge status={b.status}>{b.status}</Badge>
-            <p className="font-bold">{formatCurrency(b.amount)}</p>
+            <p className="font-bold">{formatCurrency(b.estimatedAmount)}</p>
             <div className="flex flex-wrap gap-2 items-center">
               {b.status === 'pending' && (
                 <>
                   <Button size="sm" onClick={() => acceptMutation.mutate(b._id)} disabled={acceptMutation.isPending}>
-                    {acceptMutation.isPending ? '...' : 'Accept'}
+                    Accept
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => rejectMutation.mutate(b._id)} disabled={rejectMutation.isPending}>
-                    {rejectMutation.isPending ? '...' : 'Reject'}
+                  <Button size="sm" variant="outline" onClick={() => rejectMutation.mutate(b._id)}>
+                    Reject
                   </Button>
                 </>
               )}
-              {b.status === 'confirmed' && (
+              {b.status === 'upcoming' && (
                 <Button size="sm" onClick={() => startMutation.mutate(b._id)} disabled={startMutation.isPending}>
-                  {startMutation.isPending ? '...' : 'Start Job'}
+                  Start & Go to Customer
                 </Button>
               )}
-              {b.status === 'ongoing' && (
-                <div className="flex gap-2 items-center">
-                  <Input
-                    placeholder="Enter OTP"
-                    className="w-28 h-8 text-sm"
-                    value={otpMap[b._id] || ''}
-                    onChange={(e) => handleOtpChange(b._id, e.target.value)}
-                  />
-                  <Button size="sm" onClick={() => completeMutation.mutate({ id: b._id, otp: otpMap[b._id] || '' })} disabled={completeMutation.isPending}>
-                    {completeMutation.isPending ? '...' : 'Complete'}
+              {b.status === 'in_progress' && (
+                <>
+                  <span className="text-xs text-green-600">Live location sharing</span>
+                  <Button size="sm" onClick={() => completeMutation.mutate(b._id)} disabled={completeMutation.isPending}>
+                    Mark Complete
                   </Button>
-                </div>
+                </>
               )}
             </div>
           </Card>

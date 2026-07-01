@@ -34,15 +34,15 @@ export const registerProvider = catchAsync(async (req, res) => {
   if (!categories || !Array.isArray(categories) || categories.length === 0) {
     throw new AppError('Select at least one service category.', 400);
   }
-  if (!kycDocuments || kycDocuments.length < 2) {
-    throw new AppError('Upload Aadhaar, PAN and at least one business document.', 400);
+  if (!kycDocuments || kycDocuments.length < 3) {
+    throw new AppError('Upload Aadhaar, PAN and Udyam documents.', 400);
   }
 
   const hasAadhaar = kycDocuments.some((d) => d.type === 'aadhaar');
   const hasPan = kycDocuments.some((d) => d.type === 'pan');
-  const hasBusinessDoc = kycDocuments.some((d) => d.type === 'skill_certificate' || d.type === 'shop_license');
-  if (!hasAadhaar || !hasPan || !hasBusinessDoc) {
-    throw new AppError('Aadhaar, PAN and one business document are required.', 400);
+  const hasUdyam = kycDocuments.some((d) => d.type === 'udyam');
+  if (!hasAadhaar || !hasPan || !hasUdyam) {
+    throw new AppError('Aadhaar, PAN and Udyam are required for verification.', 400);
   }
 
   let provider = await Provider.findOne({ user: req.user._id });
@@ -139,7 +139,7 @@ export const getNearbyProviders = catchAsync(async (req, res) => {
   const customerCoords = [Number(lng), Number(lat)];
   const maxDistanceMeters = 20 * 1000; // strict 20km
 
-  const matchStage = { verificationStatus: 'verified' };
+  const matchStage = { verificationStatus: 'verified', isOnline: true };
   if (category) {
     matchStage.categories = { $in: [category] };
   }

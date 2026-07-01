@@ -3,13 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { RefreshCw, Calendar, MapPin, ArrowRight, CheckCircle } from 'lucide-react';
-import { API_URL } from '@/lib/constants';
+import api from '@/lib/api';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
 
 export default function RebookPage() {
   const router = useRouter();
@@ -19,21 +15,16 @@ export default function RebookPage() {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['rebookable-bookings'],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/rebook/bookings`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      const json = await res.json();
-      return json.data || [];
+      const res = await api.get('/rebook/bookings');
+      return res.data.data || [];
     },
   });
 
   const rebookMutation = useMutation({
     mutationFn: async (bookingId: string) => {
-      const res = await fetch(`${API_URL}/rebook/${bookingId}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.message || 'Failed to rebook');
-      return json.data;
+      const res = await api.post(`/rebook/${bookingId}`);
+      if (!res.data.success) throw new Error(res.data.message || 'Failed to rebook');
+      return res.data.data;
     },
     onSuccess: (data) => {
       setRebookedId(data._id);

@@ -1,44 +1,50 @@
 'use client';
 
 import {
-  LayoutDashboard, User, Wrench, Calendar, Wallet, Star, Clock, Bell, Settings, LogOut,
-  Award, Briefcase, Zap, Users, AlertTriangle, Sparkles, Trophy,
+  LayoutDashboard, User, Calendar, Wallet, Settings, LogOut,
 } from 'lucide-react';
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Bell as BellIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useIdleTimer } from '@/hooks/useIdleTimer';
+import api from '@/lib/api';
+import toast from 'react-hot-toast';
 
 const navItems = [
   { href: '/provider', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/provider/profile', label: 'My Profile', icon: User },
-  { href: '/provider/services', label: 'My Services', icon: Wrench },
   { href: '/provider/bookings', label: 'Bookings', icon: Calendar },
+  { href: '/provider/profile', label: 'Profile & KYC', icon: User },
   { href: '/provider/earnings', label: 'Earnings', icon: Wallet },
-  { href: '/provider/reviews', label: 'Reviews', icon: Star },
-  { href: '/provider/availability', label: 'My Availability', icon: Clock },
-  { href: '/provider/badges', label: 'Badges', icon: Award },
-  { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
-  { href: '/provider/portfolio', label: 'Portfolio', icon: Briefcase },
-  { href: '/provider/alerts', label: 'Job Alerts', icon: AlertTriangle },
-  { href: '/provider/matching', label: 'AI Matching', icon: Sparkles },
-  { href: '/provider/emergency', label: 'Emergency Mode', icon: Zap },
-  { href: '/provider/team', label: 'My Team', icon: Users },
-  { href: '/provider/notifications', label: 'Notifications', icon: Bell },
   { href: '/provider/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function ProviderLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, logout, isLoggedIn, isInitializing } = useAuth();
-  useIdleTimer();
+  const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
     if (!isInitializing && !isLoggedIn) router.replace('/login?redirect=/provider');
   }, [isLoggedIn, isInitializing, router]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    api.get('/providers/me')
+      .then(({ data }) => setIsOnline(Boolean(data.data?.isOnline)))
+      .catch(() => undefined);
+  }, [isLoggedIn]);
+
+  const toggleOnline = async () => {
+    try {
+      const { data } = await api.patch('/providers/online');
+      setIsOnline(Boolean(data.data?.isOnline));
+      toast.success(data.data?.isOnline ? 'You are now online' : 'You are offline');
+    } catch {
+      toast.error('Could not update availability');
+    }
+  };
 
   if (isInitializing || !isLoggedIn) return null;
 
@@ -54,8 +60,7 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
           name: displayName,
           role: 'Service Provider',
           avatar: user?.avatar,
-          rating: 4.8,
-          isOnline: true,
+          isOnline,
         }}
       />
       <div className="flex flex-1 flex-col">
@@ -68,14 +73,9 @@ export default function ProviderLayout({ children }: { children: React.ReactNode
             <button className="relative rounded-lg p-2 hover:bg-slate-100">
               <BellIcon className="h-5 w-5" />
             </button>
-            {user?.avatar ? (
-              <img src={user.avatar} alt="Profile" className="h-9 w-9 rounded-full object-cover border border-brand-orange/30" />
-            ) : (
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-orange text-white font-medium">
-                {displayName.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <Button variant="secondary" size="sm">Go Offline</Button>
+            <Button variant={isOnline ? 'secondary' : 'outline'} size="sm" onClick={toggleOnline}>
+              {isOnline ? 'Go Offline' : 'Go Online'}
+            </Button>
             <button onClick={logout} className="rounded-lg p-2 hover:bg-slate-100" title="Logout">
               <LogOut className="h-5 w-5 text-slate-600" />
             </button>

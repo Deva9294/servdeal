@@ -12,15 +12,8 @@ export default function OffersPage() {
   const { data: coupons } = useQuery({
     queryKey: ['coupons'],
     queryFn: async () => {
-      try {
-        const res = await api.get('/coupons');
-        return res.data.data;
-      } catch {
-        return [
-          { code: 'WELCOME100', title: 'Welcome Offer', description: 'Flat ₹100 off', discountValue: 100 },
-          { code: 'AC100', title: 'AC Service', description: '₹100 off AC repair', discountValue: 100 },
-        ];
-      }
+      const res = await api.get('/coupons');
+      return res.data.data || [];
     },
   });
 

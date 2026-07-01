@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { PageHeader } from '@/components/dashboard/PageHeader';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -12,91 +13,106 @@ import { formatCurrency } from '@/lib/utils';
 import { payWithPayU } from '@/lib/payu';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-import { Calendar, MapPin, CreditCard, Wallet, Banknote } from 'lucide-react';
+import { Calendar, MapPin, CreditCard, Users } from 'lucide-react';
 
-const paymentMethods = [
-  { id: 'payu', label: 'Card / UPI (PayU)', icon: CreditCard },
-  { id: 'wallet', label: 'Wallet', icon: Wallet },
-  { id: 'cod', label: 'Cash on Delivery', icon: Banknote },
-];
+const NearbyMap = dynamic(
+  () => import('@/components/maps/NearbyMap').then((mod) => mod.NearbyMap),
+  { ssr: false }
+);
+
+type NearbyProvider = {
+  _id: string;
+  fullName?: string;
+  shopName?: string;
+  distance?: number;
+  rating?: number;
+  experienceYears?: number;
+  profilePicture?: string;
+};
 
 function BookForm() {
   const router = useRouter();
   const params = useSearchParams();
   const slug = params.get('service') || 'electrician';
-  const pkg = params.get('package') || 'basic';
   const service = getServiceBySlug(slug) || SERVICES[0];
 
   const [date, setDate] = useState('');
   const [time, setTime] = useState('10:00');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('Patna');
-  const [payment, setPayment] = useState('payu');
   const [loading, setLoading] = useState(false);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [providers, setProviders] = useState<NearbyProvider[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState<string>('');
 
-  // Get customer location on mount
+  const price = service.basePrice;
+
   const requestCoords = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-        () => toast.error('Could not get location. Auto-assignment may not work.'),
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+    if (!navigator.geolocation) {
+      toast.error('Location not supported on this device');
+      return;
     }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => toast.error('Enable live location to find nearby providers within 20 km'),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
-  const price =
-    pkg === 'premium'
-      ? Math.round(service.basePrice * 2)
-      : pkg === 'standard'
-        ? Math.round(service.basePrice * 1.4)
-        : service.basePrice;
+  const loadProviders = useCallback(async (lat: number, lng: number) => {
+    try {
+      const { data } = await api.get('/providers/nearby', {
+        params: { lat, lng, category: service.name },
+      });
+      setProviders(data.data || []);
+      if (!data.data?.length) toast.error('No available providers within 20 km for this service');
+    } catch {
+      toast.error('Could not load nearby providers');
+    }
+  }, [service.name]);
 
   useEffect(() => {
-    requestCoords();
-  }, []);
-
-  const providerId = params.get('provider');
+    if (coords) loadProviders(coords.lat, coords.lng);
+  }, [coords, slug, loadProviders]);
 
   const handleBook = async () => {
     if (!date || !address) {
       toast.error('Please select date and address');
       return;
     }
+    if (!coords) {
+      toast.error('Live location is required');
+      return;
+    }
+    if (!selectedProvider) {
+      toast.error('Select a nearby available provider');
+      return;
+    }
+
     setLoading(true);
     try {
       const scheduledAt = new Date(`${date}T${time}:00`);
       const { data } = await api.post('/bookings', {
         serviceId: slug,
-        packageName: pkg,
+        providerId: selectedProvider,
         scheduledAt,
-        amount: price,
-        paymentMethod: payment === 'payu' ? 'payu' : payment,
-        providerId: providerId || undefined,
-        address: { line1: address, city, state: 'Bihar', pincode: '800001', lat: coords?.lat, lng: coords?.lng },
+        time,
+        estimatedAmount: price,
+        paymentMethod: 'payu',
+        address: {
+          line1: address,
+          city,
+          state: 'Bihar',
+          pincode: '800001',
+          lat: coords.lat,
+          lng: coords.lng,
+        },
       });
 
       const booking = data.data;
-
-      if (data.requiresPayment && payment === 'payu') {
+      if (data.requiresPayment && data.payu) {
         toast.loading('Redirecting to PayU...', { id: 'payu' });
-        try {
-          await payWithPayU({
-            bookingId: booking._id,
-            description: `${service.name} - ${pkg}`,
-          });
-        } catch (payErr: unknown) {
-          toast.dismiss('payu');
-          const msg = payErr instanceof Error ? payErr.message : 'Payment failed';
-          if (msg.includes('cancelled')) {
-            toast.error('Payment cancelled. Booking saved — pay from My Bookings.');
-            router.push(`/dashboard/bookings/${booking._id}`);
-          } else {
-            toast.error(msg);
-            router.push(`/dashboard/bookings/${booking._id}`);
-          }
-        }
+        await payWithPayU({ payuPayload: data.payu });
         return;
       }
 
@@ -104,67 +120,110 @@ function BookForm() {
       router.push(`/dashboard/bookings/${booking._id}`);
     } catch (err: unknown) {
       const res = (err as { response?: { status?: number; data?: { message?: string } } })?.response;
-      const msg = res?.data?.message;
       if (res?.status === 401) {
         toast.error('Please login to book');
         router.push(`/login?redirect=/dashboard/book?service=${slug}`);
       } else {
-        toast.error(msg || 'Booking failed');
+        toast.error(res?.data?.message || 'Booking failed');
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const mapPoints = coords
+    ? providers.slice(0, 20).map((p, i) => ({
+      id: p._id,
+      label: p.shopName || p.fullName || 'Provider',
+      lat: coords!.lat + (i * 0.002),
+      lng: coords!.lng + (i * 0.002),
+      meta: `${p.distance || '?'} km · ★ ${p.rating || 0}`,
+    }))
+    : [];
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <PageHeader title="Book Service" description="Complete your booking in a few steps" />
+      <PageHeader title="Book Service" description="Select provider, schedule, pay and confirm" />
 
       <Card className="flex items-center gap-4 p-4">
         <ServiceIcon name={service.icon} className={service.color} />
         <div>
           <p className="font-semibold text-brand-navy">{service.name}</p>
-          <p className="text-sm capitalize text-slate-500">{pkg} package</p>
           <p className="text-lg font-bold text-brand-orange">{formatCurrency(price)}</p>
+        </div>
+      </Card>
+
+      <Card className="space-y-4 p-5">
+        <h3 className="font-semibold flex items-center gap-2">
+          <MapPin className="h-5 w-5 text-brand-orange" /> Live Location
+        </h3>
+        <p className="text-sm text-slate-500">
+          {coords
+            ? `Location captured (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`
+            : 'Fetching your live location...'}
+        </p>
+        <Button variant="outline" size="sm" onClick={requestCoords}>Refresh Location</Button>
+      </Card>
+
+      <Card className="space-y-4 p-5">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Users className="h-5 w-5 text-brand-orange" /> Nearby Providers (20 km)
+          </h3>
+          <span className="text-xs text-slate-500">{providers.length} available</span>
+        </div>
+        {coords && mapPoints.length > 0 ? <NearbyMap points={mapPoints} center={[coords.lat, coords.lng]} /> : null}
+        <div className="space-y-2">
+          {providers.map((p) => (
+            <label
+              key={p._id}
+              className={`flex cursor-pointer items-center justify-between rounded-xl border p-3 ${
+                selectedProvider === p._id ? 'border-brand-orange bg-orange-50' : ''
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="provider"
+                  checked={selectedProvider === p._id}
+                  onChange={() => setSelectedProvider(p._id)}
+                />
+                <div>
+                  <p className="font-medium">{p.shopName || p.fullName || 'Provider'}</p>
+                  <p className="text-xs text-slate-500">
+                    {p.distance} km · {p.experienceYears || 0} yrs · ★ {p.rating || 0}
+                  </p>
+                </div>
+              </div>
+            </label>
+          ))}
+          {!providers.length && coords ? (
+            <p className="text-sm text-slate-500">No online verified providers within 20 km.</p>
+          ) : null}
         </div>
       </Card>
 
       <Card className="space-y-4 p-5">
         <h3 className="font-semibold flex items-center gap-2"><Calendar className="h-5 w-5 text-brand-orange" /> Schedule</h3>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="text-sm font-medium">Date</label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
-          </div>
-          <div>
-            <label className="text-sm font-medium">Time</label>
-            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-          </div>
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} min={new Date().toISOString().split('T')[0]} />
+          <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
       </Card>
 
       <Card className="space-y-4 p-5">
-        <h3 className="font-semibold flex items-center gap-2"><MapPin className="h-5 w-5 text-brand-orange" /> Address</h3>
+        <h3 className="font-semibold flex items-center gap-2"><MapPin className="h-5 w-5 text-brand-orange" /> Service Address</h3>
         <Input placeholder="House no., street, landmark" value={address} onChange={(e) => setAddress(e.target.value)} />
         <Input placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
       </Card>
 
       <Card className="space-y-3 p-5">
-        <h3 className="font-semibold">Payment Method</h3>
-        {paymentMethods.map((m) => (
-          <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border p-3 ${payment === m.id ? 'border-brand-orange bg-orange-50' : ''}`}>
-            <input type="radio" name="pay" checked={payment === m.id} onChange={() => setPayment(m.id)} />
-            <m.icon className="h-5 w-5 text-brand-orange" />
-            <span className="text-sm font-medium">{m.label}</span>
-          </label>
-        ))}
-        {payment === 'payu' && (
-          <p className="text-xs text-slate-500">Secured by PayU — UPI, cards, netbanking supported.</p>
-        )}
+        <h3 className="font-semibold flex items-center gap-2"><CreditCard className="h-5 w-5 text-brand-orange" /> Payment</h3>
+        <p className="text-sm text-slate-600">Pay securely via PayU (UPI, cards, netbanking)</p>
       </Card>
 
       <Button className="w-full" size="lg" onClick={handleBook} disabled={loading}>
-        {loading ? 'Processing...' : payment === 'payu' ? `Pay ${formatCurrency(price)} & Book` : `Confirm Booking · ${formatCurrency(price)}`}
+        {loading ? 'Processing...' : `Pay ${formatCurrency(price)} & Book`}
       </Button>
     </div>
   );

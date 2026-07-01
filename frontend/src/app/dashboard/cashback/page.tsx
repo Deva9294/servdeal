@@ -1,14 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { Percent, Clock, CheckCircle, AlertCircle, Gift } from 'lucide-react';
-import { API_URL } from '@/lib/constants';
-
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
+import api from '@/lib/api';
 
 export default function CashbackPage() {
   const [status, setStatus] = useState('all');
@@ -16,18 +12,16 @@ export default function CashbackPage() {
   const { data: stats } = useQuery({
     queryKey: ['cashback-stats'],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/cashback/stats`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      const json = await res.json();
-      return json.data;
+      const res = await api.get('/cashback/stats');
+      return res.data.data;
     },
   });
 
   const { data: cashbacks, isLoading } = useQuery({
     queryKey: ['cashbacks', status],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/cashback/my?status=${status}`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      const json = await res.json();
-      return json.data || [];
+      const res = await api.get(`/cashback/my?status=${status}`);
+      return res.data.data || [];
     },
   });
 

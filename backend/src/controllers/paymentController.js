@@ -19,11 +19,11 @@ export const createOrder = catchAsync(async (req, res) => {
   if (String(booking.customer) !== String(req.user._id)) {
     throw new AppError('Not your booking', 403);
   }
-  if (booking.status !== 'completed') {
-    throw new AppError('Job not completed yet. Payment allowed only after completion.', 400);
-  }
   if (booking.paymentStatus === 'paid') {
     throw new AppError('Payment already done for this booking', 400);
+  }
+  if (booking.status === 'cancelled') {
+    throw new AppError('Booking is cancelled', 400);
   }
 
   const payAmount = booking.finalAmount || booking.estimatedAmount || 0;
@@ -87,7 +87,7 @@ export const verifyPayment = catchAsync(async (req, res) => {
 
   const booking = await Booking.findByIdAndUpdate(
     payment.metadata?.bookingId,
-    { paymentStatus: 'paid', status: 'paid', payuTxnId: String(mihpayid) },
+    { paymentStatus: 'paid', payuTxnId: String(mihpayid) },
     { new: true }
   );
   if (!booking) throw new AppError('Booking not found', 404);
@@ -134,7 +134,7 @@ export const payuCallback = catchAsync(async (req, res) => {
   if (status === 'success') {
     const booking = await Booking.findByIdAndUpdate(
       payment.metadata?.bookingId,
-      { paymentStatus: 'paid', status: 'paid', payuTxnId: String(mihpayid) },
+      { paymentStatus: 'paid', payuTxnId: String(mihpayid) },
       { new: true }
     );
     if (booking) {

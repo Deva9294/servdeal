@@ -4,11 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { RotateCcw, Clock, CheckCircle, XCircle, Loader2 } from 'lucide-react';
-import { API_URL } from '@/lib/constants';
-
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
+import api from '@/lib/api';
 
 export default function RefundsPage() {
   const [status, setStatus] = useState('all');
@@ -16,9 +12,8 @@ export default function RefundsPage() {
   const { data: refunds, isLoading } = useQuery({
     queryKey: ['refunds', status],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/refunds/my?status=${status}`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      const json = await res.json();
-      return json.data || [];
+      const res = await api.get(`/refunds/my?status=${status}`);
+      return res.data.data || [];
     },
   });
 

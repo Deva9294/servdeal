@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const kycDocSchema = new mongoose.Schema({
-  type: { type: String, enum: ['aadhaar', 'pan', 'skill_certificate', 'shop_license'], required: true },
+  type: { type: String, enum: ['aadhaar', 'pan', 'udyam', 'skill_certificate', 'shop_license'], required: true },
   url: { type: String, required: true },
   number: String,
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },

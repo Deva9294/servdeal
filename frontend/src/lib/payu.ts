@@ -47,20 +47,25 @@ export async function payWithPayU(options: {
   amount?: number;
   purpose?: 'booking' | 'wallet';
   description?: string;
+  payuPayload?: PayuPayload;
 }) {
-  const { data } = await api.post('/payments/order', {
-    bookingId: options.bookingId,
-    amount: options.amount,
-    purpose: options.purpose || 'booking',
-  });
+  let payload = options.payuPayload;
 
-  const payload = data.payu;
+  if (!payload) {
+    const { data } = await api.post('/payments/order', {
+      bookingId: options.bookingId,
+      amount: options.amount,
+      purpose: options.purpose || 'booking',
+    });
+    payload = data.payu;
+  }
+
   if (!payload?.action) {
     throw new Error('PayU payment initialization failed');
   }
 
   buildPayuForm(payload);
-  return data;
+  return payload;
 }
 
 export async function isPayuEnabled() {

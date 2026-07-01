@@ -2,20 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Receipt, Download, Printer } from 'lucide-react';
-import { API_URL } from '@/lib/constants';
-
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
+import { Receipt, Printer } from 'lucide-react';
+import api from '@/lib/api';
 
 export default function InvoicesPage() {
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['invoices-bookings'],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/bookings/my`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      const json = await res.json();
-      return (json.data || []).filter((b: { paymentStatus?: string }) => b.paymentStatus === 'paid');
+      const res = await api.get('/bookings/my');
+      return (res.data.data || []).filter((b: { paymentStatus?: string }) => b.paymentStatus === 'paid');
     },
   });
 
@@ -58,7 +53,7 @@ export default function InvoicesPage() {
                   <p className="font-semibold text-slate-900">₹{b.amount?.toLocaleString('en-IN')}</p>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => window.open(`/api/v1/invoices/booking/${b._id}?token=${getToken()}`, '_blank')}
+                      onClick={() => window.open(`${api.defaults.baseURL?.replace('/api/v1', '')}/api/v1/invoices/booking/${b._id}`, '_blank')}
                       className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50"
                     >
                       <Printer className="h-4 w-4" />

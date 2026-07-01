@@ -2,8 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ShieldCheck, Clock, CheckCircle } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import api from '@/lib/api';
 
 export default function AdminWarrantiesPage() {

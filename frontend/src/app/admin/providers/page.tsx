@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Search, ShieldCheck, ShieldX, Eye, MapPin, User, Camera } from 'lucide-react';
+import { Search, ShieldCheck, ShieldX, Eye, MapPin, Camera } from 'lucide-react';
 
 interface ProviderProfile {
   _id: string;

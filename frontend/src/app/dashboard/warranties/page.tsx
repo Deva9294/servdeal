@@ -4,11 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Clock, AlertTriangle } from 'lucide-react';
-import { API_URL } from '@/lib/constants';
-
-function getToken() {
-  return localStorage.getItem('token') || '';
-}
+import api from '@/lib/api';
 
 export default function WarrantiesPage() {
   const [status, setStatus] = useState('all');
@@ -16,9 +12,8 @@ export default function WarrantiesPage() {
   const { data: warranties, isLoading } = useQuery({
     queryKey: ['warranties', status],
     queryFn: async () => {
-      const res = await fetch(`${API_URL}/warranties/my?status=${status}`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      const json = await res.json();
-      return json.data || [];
+      const res = await api.get(`/warranties/my?status=${status}`);
+      return res.data.data || [];
     },
   });
 

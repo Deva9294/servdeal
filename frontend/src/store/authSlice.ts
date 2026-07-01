@@ -20,7 +20,14 @@ type AuthState = {
 
 const getInitialToken = () => {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
+    // Try cookie first, then localStorage
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift();
+      return null;
+    };
+    return getCookie('token') || localStorage.getItem('token');
   }
   return null;
 };
@@ -44,6 +51,9 @@ const authSlice = createSlice({
       state.isInitializing = false;
       if (typeof window !== 'undefined') {
         localStorage.setItem('token', action.payload.token);
+        // Also set cookie for consistency with backend
+        const isProd = process.env.NODE_ENV === 'production';
+        document.cookie = `token=${action.payload.token}; path=/; max-age=${7 * 24 * 60 * 60}; ${isProd ? 'secure; samesite=none' : 'samesite=lax'}`;
       }
     },
     updateUser: (state, action: PayloadAction<Partial<AuthUser>>) => {
@@ -55,7 +65,10 @@ const authSlice = createSlice({
       state.user = null;
       state.token = null;
       state.isInitializing = false;
-      if (typeof window !== 'undefined') localStorage.removeItem('token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      }
     },
     finishInitializing: (state) => {
       state.isInitializing = false;
