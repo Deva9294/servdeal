@@ -163,7 +163,6 @@ export const getConfig = catchAsync(async (req, res) => {
     success: true,
     payu: {
       enabled: isPayuConfigured(),
-      key: process.env.PAYU_KEY || null,
       env: process.env.PAYU_ENV || 'sandbox',
     },
   });

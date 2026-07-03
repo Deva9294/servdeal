@@ -1,8 +1,9 @@
 import User from '../models/User.js';
 import BookingOTP from '../models/BookingOTP.js';
+import { randomInt } from 'crypto';
 
 export const generateOTP = () =>
-  Math.floor(100000 + Math.random() * 900000).toString();
+  randomInt(100000, 999999).toString();
 
 export const saveOTP = async (userId, otp) => {
   const expires = new Date(Date.now() + (process.env.OTP_EXPIRE_MINUTES || 10) * 60 * 1000);

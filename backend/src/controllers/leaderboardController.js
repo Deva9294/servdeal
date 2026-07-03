@@ -47,7 +47,9 @@ const buildProviderLeaderboard = async (filter = {}, sortField = 'rating', limit
 
 export const getCityLeaderboard = catchAsync(async (req, res) => {
   const { city, limit = 50 } = req.query;
-  const filter = city ? { city: new RegExp(city, 'i') } : {};
+  const filter = city 
+    ? { city: new RegExp(city.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'i') } 
+    : {};
   const data = await buildProviderLeaderboard(filter, 'rating', Number(limit));
   res.json({ success: true, data });
 });
@@ -62,7 +64,7 @@ export const getCategoryLeaderboard = catchAsync(async (req, res) => {
 export const getTopProviders = catchAsync(async (req, res) => {
   const { limit = 10, city, serviceId } = req.query;
   const filter = {};
-  if (city) filter.city = new RegExp(city, 'i');
+  if (city) filter.city = new RegExp(city.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&'), 'i');
   if (serviceId) filter.services = serviceId;
 
   const data = await buildProviderLeaderboard(filter, 'completedJobs', Number(limit));

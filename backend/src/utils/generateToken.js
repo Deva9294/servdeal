@@ -5,14 +5,25 @@ export const signAccessToken = (payload) =>
     expiresIn: process.env.JWT_EXPIRE || '7d',
   });
 
-export const signRefreshToken = (payload) =>
-  jwt.sign(payload, process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET, {
+export const signRefreshToken = (payload) => {
+  const refreshSecret = process.env.JWT_REFRESH_SECRET;
+  if (!refreshSecret) {
+    throw new Error('JWT_REFRESH_SECRET must be defined in environment variables');
+  }
+  return jwt.sign(payload, refreshSecret, {
     expiresIn: process.env.JWT_REFRESH_EXPIRE || '30d',
   });
+};
 
 export const verifyToken = (token, refresh = false) => {
-  const secret = refresh
-    ? process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
-    : process.env.JWT_SECRET;
+  let secret;
+  if (refresh) {
+    secret = process.env.JWT_REFRESH_SECRET;
+    if (!secret) {
+      throw new Error('JWT_REFRESH_SECRET must be defined in environment variables');
+    }
+  } else {
+    secret = process.env.JWT_SECRET;
+  }
   return jwt.verify(token, secret);
 };

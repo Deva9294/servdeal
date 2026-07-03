@@ -1,0 +1,75 @@
+name: Security & Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * 0' # Weekly security scan
+
+jobs:
+  secret-scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog - Secret Scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+        continue-on-error: true
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Run npm audit
+        run: npm audit --production
+        continue-on-error: true
+
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          path: '.'
+          format: 'JSON'
+        continue-on-error: true
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for linting issues
+        run: |
+          npm run lint --workspace=backend 2>/dev/null || echo "Backend linting warnings"
+          npm run lint --workspace=frontend 2>/dev/null || echo "Frontend linting warnings"
+        continue-on-error: true
+
+      - name: Check code size
+        run: |
+          echo "=== Backend File Size ==="
+          du -sh backend/
+          echo "=== Frontend Build Size ==="
+          du -sh frontend/.next/ 2>/dev/null || echo "Build not compiled yet"
+        continue-on-error: true

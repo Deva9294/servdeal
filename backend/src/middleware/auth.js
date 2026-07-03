@@ -13,7 +13,13 @@ export const protect = catchAsync(async (req, res, next) => {
 
   if (!token) return next(new AppError('Please log in', 401));
 
-  const decoded = verifyToken(token);
+  let decoded;
+  try {
+    decoded = verifyToken(token);
+  } catch (err) {
+    return next(new AppError('Invalid or expired token', 401));
+  }
+  
   const user = await User.findById(decoded.id);
   if (!user) return next(new AppError('User no longer exists', 401));
   if (user.isBlocked) return next(new AppError('Account blocked', 403));

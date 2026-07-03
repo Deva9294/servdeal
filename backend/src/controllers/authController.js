@@ -16,7 +16,7 @@ const sendTokens = (user, res) => {
   const refreshToken = signRefreshToken(payload);
   const isProd = process.env.NODE_ENV === 'production';
   res.cookie('token', token, {
-    httpOnly: false,
+    httpOnly: true,
     secure: isProd,
     sameSite: isProd ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -113,15 +113,10 @@ export const sendOtp = catchAsync(async (req, res) => {
     }
   }
 
-  const exposeOtp =
-    !smsSent &&
-    (process.env.NODE_ENV === 'development' || process.env.OTP_EXPOSE_IN_RESPONSE === 'true');
-
   res.json({
     success: true,
     message: smsSent ? 'OTP sent to your mobile' : 'OTP generated (SMS not configured)',
     phone: normalizedPhone,
-    ...(exposeOtp && { otp }),
   });
 });
 
@@ -149,7 +144,11 @@ export const sendEmailOtp = catchAsync(async (req, res) => {
 
   let user = await User.findOne({ email });
   if (!user) {
-    throw new AppError('Email not registered. Please sign up first.', 404);
+    return res.json({
+      success: true,
+      message: 'If an account exists with this email, an OTP has been sent.',
+      email,
+    });
   }
 
   const otp = generateOTP();
@@ -163,15 +162,10 @@ export const sendEmailOtp = catchAsync(async (req, res) => {
     console.error('[Email OTP]', err.message);
   }
 
-  const exposeOtp =
-    !emailSent &&
-    (process.env.NODE_ENV === 'development' || process.env.OTP_EXPOSE_IN_RESPONSE === 'true');
-
   res.json({
     success: true,
     message: emailSent ? 'OTP sent to your email' : 'OTP generated (email not configured)',
     email,
-    ...(exposeOtp && { otp }),
   });
 });
 
@@ -218,25 +212,23 @@ export const resendEmailOtp = catchAsync(async (req, res) => {
 
 export const forgotPassword = catchAsync(async (req, res) => {
   const user = await User.findOne({ email: req.body.email });
-  if (!user) throw new AppError('No account with that email', 404);
+  
+  if (user) {
+    const otp = generateOTP();
+    await saveOTP(user._id, otp);
 
-  const otp = generateOTP();
-  await saveOTP(user._id, otp);
-
-  let emailSent = false;
-  try {
-    await sendPasswordResetEmail(user.email, user.name, otp);
-    emailSent = true;
-  } catch (err) {
-    console.error('[Forgot Password Email]', err.message);
+    let emailSent = false;
+    try {
+      await sendPasswordResetEmail(user.email, user.name, otp);
+      emailSent = true;
+    } catch (err) {
+      console.error('[Forgot Password Email]', err.message);
+    }
   }
 
   res.json({
     success: true,
-    message: emailSent
-      ? `OTP sent to ${user.email}`
-      : 'OTP generated — configure email to deliver',
-    ...((!emailSent && process.env.NODE_ENV === 'development') && { otp }),
+    message: 'If an account exists with that email, a password reset OTP has been sent.',
   });
 });
 

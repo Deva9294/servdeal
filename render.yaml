@@ -11,17 +11,23 @@ services:
       - key: PORT
         value: 5000
       - key: OTP_EXPOSE_IN_RESPONSE
-        value: true
+        value: false
       - key: SMS_PROVIDER
-        value: msg91
+        scope: secret
       - key: MSG91_AUTH_KEY
-        value: 519622AOt4gfygx6a133af2P1
+        scope: secret
       - key: MSG91_OTP_TEMPLATE_ID
-        value: SRVDEL
+        scope: secret
       - key: RESEND_API_KEY
-        value: re_xxxxxxxx
+        scope: secret
       - key: EMAIL_FROM
-        value: noreply@servdeal.in
+        scope: secret
+      - key: MONGO_URI
+        scope: secret
+      - key: JWT_SECRET
+        scope: secret
+      - key: JWT_REFRESH_SECRET
+        scope: secret
 
   - type: web
     name: servdeal-frontend
@@ -34,4 +40,6 @@ services:
         value: production
       - key: NEXT_PUBLIC_API_URL
         value: https://servdeal-backend.onrender.com/api/v1
+      - key: NEXT_PUBLIC_SOCKET_URL
+        scope: secret
 

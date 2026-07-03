@@ -1,5 +1,6 @@
 import { connectDB } from './config/db.js';
 import { configureCloudinary } from './config/cloudinary.js';
+import { validateEnvironment } from './utils/validateEnv.js';
 import http from 'http';
 import { app } from './appInstance.js';
 import { Server } from 'socket.io';
@@ -21,13 +22,14 @@ const PORT = process.env.PORT || 5000;
 
 const start = async () => {
   try {
+    validateEnvironment();
     await connectDB();
     configureCloudinary();
     server.listen(PORT, () => {
-      console.log(`ServDeal API running on port ${PORT}`);
+      console.log(`✅ ServDeal API running on port ${PORT}`);
     });
   } catch (err) {
-    console.error(err);
+    console.error('❌ Server startup failed:', err.message);
     process.exit(1);
   }
 };

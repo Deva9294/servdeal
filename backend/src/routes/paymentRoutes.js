@@ -14,7 +14,7 @@ const paymentLimiter = rateLimit({
 });
 
 router.get('/config', ctrl.getConfig);
-router.post('/payu/callback', ctrl.payuCallback);
+router.post('/payu/callback', protect, ctrl.payuCallback);
 
 router.use(protect);
 router.post('/order', paymentLimiter, ctrl.createOrder);
