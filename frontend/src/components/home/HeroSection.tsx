@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Search, MapPin, Shield, Star, Users, Wrench, Zap, Droplets, Home, Sparkles, Clock, BadgeCheck, CheckCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -48,7 +49,7 @@ export function HeroSection() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-orange to-red-500">Responsibility</span>
           </h1>
           <p className="mt-4 max-w-lg text-lg text-slate-600 leading-relaxed">
-            Book trusted professionals for all your home and daily services — fast, easy and reliable. From AC repair to construction, we've got you covered.
+            Book trusted professionals for all your home and daily services — fast, easy and reliable. From AC repair to construction, we&apos;ve got you covered.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">
@@ -103,12 +104,13 @@ export function HeroSection() {
 
             {/* Main Hero Image - Professional Service Worker */}
             <div className="relative z-10">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=700&fit=crop&crop=faces"
                 alt="Service Professional"
+                width={600}
+                height={700}
                 className="h-[500px] w-auto rounded-3xl object-cover shadow-2xl border-4 border-white"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = 'none';
                   const fallback = (e.target as HTMLImageElement).parentElement?.querySelector('.fallback-hero');
                   if (fallback) (fallback as HTMLElement).style.display = 'grid';
                 }}
