@@ -15,53 +15,73 @@ const kycChanged = (existingDocs, newDocs) => {
 
 export const registerProvider = catchAsync(async (req, res) => {
   const {
-    fullName,
+    name,
     shopName,
-    phone,
-    profilePicture,
-    categories,
-    kycDocuments,
-    bio,
-    skills,
-    experienceYears,
-    bankDetails,
+    shopAddress,
+    city,
+    state,
+    pincode,
     location,
+    services,
+    experienceYears,
+    skills,
+    aadhaarNumber,
+    panNumber,
+    bankDetails,
+    documents,
+    shopPhoto,
+    profilePhoto,
+    maxServiceRadius = 20,
   } = req.body;
 
+  // Validation
   if (!location || location.lat == null || location.lng == null) {
     throw new AppError('Location is required. Enable GPS to auto-fetch coordinates.', 400);
   }
-  if (!categories || !Array.isArray(categories) || categories.length === 0) {
+  if (!services || !Array.isArray(services) || services.length === 0) {
     throw new AppError('Select at least one service category.', 400);
   }
-  if (!kycDocuments || kycDocuments.length < 3) {
-    throw new AppError('Upload Aadhaar, PAN and Udyam documents.', 400);
+  if (!shopName || !shopAddress || !city || !state || !pincode) {
+    throw new AppError('Shop details are required.', 400);
   }
 
-  const hasAadhaar = kycDocuments.some((d) => d.type === 'aadhaar');
-  const hasPan = kycDocuments.some((d) => d.type === 'pan');
-  const hasUdyam = kycDocuments.some((d) => d.type === 'udyam');
-  if (!hasAadhaar || !hasPan || !hasUdyam) {
-    throw new AppError('Aadhaar, PAN and Udyam are required for verification.', 400);
+  // Build KYC documents array
+  const kycDocuments = [];
+  if (documents?.aadhaar) {
+    kycDocuments.push({ type: 'aadhaar', url: documents.aadhaar, number: aadhaarNumber });
+  }
+  if (documents?.pan) {
+    kycDocuments.push({ type: 'pan', url: documents.pan, number: panNumber });
+  }
+  if (documents?.certificate) {
+    kycDocuments.push({ type: 'skill_certificate', url: documents.certificate });
   }
 
   let provider = await Provider.findOne({ user: req.user._id });
 
   const payload = {
-    fullName: fullName || '',
+    fullName: name || req.user.name || '',
     shopName: shopName || '',
-    phone: phone || req.user.phone || '',
-    profilePicture: profilePicture || '',
-    categories,
+    phone: req.user.phone || '',
+    profilePicture: profilePhoto || '',
+    shopPhoto: shopPhoto || '',
+    categories: services || [],
     kycDocuments,
-    bio: bio || '',
-    skills: skills || [],
+    bio: skills || '',
+    skills: Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s => s.trim()) : []),
     experienceYears: experienceYears || 0,
     bankDetails: bankDetails || {},
     currentLocation: { type: 'Point', coordinates: [location.lng, location.lat] },
     locationUpdatedAt: new Date(),
     verificationStatus: 'pending_verification',
     rejectionReason: '',
+    serviceRadiusKm: maxServiceRadius,
+    shopAddress: {
+      line1: shopAddress || '',
+      city: city || '',
+      state: state || '',
+      pincode: pincode || '',
+    },
   };
 
   if (provider) {
@@ -131,13 +151,14 @@ export const toggleOnline = catchAsync(async (req, res) => {
 });
 
 export const getNearbyProviders = catchAsync(async (req, res) => {
-  const { lat, lng, category } = req.query;
+  const { lat, lng, category, maxRadius } = req.query;
   if (!lat || !lng || isNaN(Number(lat)) || isNaN(Number(lng))) {
     throw new AppError('Customer location (lat, lng) is required.', 400);
   }
 
   const customerCoords = [Number(lng), Number(lat)];
-  const maxDistanceMeters = 20 * 1000; // strict 20km
+  // Use provided maxRadius or default to 20km
+  const maxDistanceMeters = (maxRadius ? Number(maxRadius) : 20) * 1000;
 
   const matchStage = { verificationStatus: 'verified', isOnline: true };
   if (category) {
@@ -178,6 +199,7 @@ export const getNearbyProviders = catchAsync(async (req, res) => {
         completedJobs: 1,
         profilePicture: 1,
         shopPhoto: 1,
+        serviceRadiusKm: 1,
         distance: { $round: [{ $divide: ['$distance', 1000] }, 1] }, // km rounded
         user: 1,
       },
