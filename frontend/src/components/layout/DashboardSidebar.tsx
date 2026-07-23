@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Logo } from '@/components/brand/Logo';
 import { cn } from '@/lib/utils';
@@ -46,7 +47,13 @@ export function DashboardSidebar({
           <div className="flex items-center gap-3">
             <div className="relative">
               {profile.avatar ? (
-                <img src={profile.avatar} alt={profile.name} className="h-12 w-12 rounded-full object-cover" />
+                <Image 
+                  src={profile.avatar} 
+                  alt={profile.name || 'User'} 
+                  width={48} 
+                  height={48} 
+                  className="h-12 w-12 rounded-full object-cover" 
+                />
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-orange text-white font-bold text-lg">
                   {(profile.name || 'U').charAt(0).toUpperCase()}
