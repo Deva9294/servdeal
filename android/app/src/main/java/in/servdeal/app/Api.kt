@@ -1,4 +1,4 @@
-package in.servdeal.app
+package com.servdeal.app
 
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
