@@ -4,10 +4,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 android {
-    namespace = "in.servdeal.app"
+    namespace = "com.servdeal.app"
     compileSdk = 35
     defaultConfig {
-        applicationId = "in.servdeal.app"
+        applicationId = "com.servdeal.app"
         minSdk = 23
         targetSdk = 35
         versionCode = 1
