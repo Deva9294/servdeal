@@ -1,4 +1,4 @@
-package in.servdeal.app
+package com.servdeal.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
